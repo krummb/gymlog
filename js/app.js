@@ -2,6 +2,15 @@ import { load, save, exportJson, importJson } from "./store.js";
 import * as L from "./logic.js";
 
 let db = load();
+const MODES = ["auto", "light", "dark"];
+function applyMode() {
+  const m = db.settings.mode || "auto";
+  if (m === "auto") delete document.documentElement.dataset.mode; else document.documentElement.dataset.mode = m;
+  const dark = m === "dark" || (m === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0E1013" : "#3C4048");
+}
+applyMode();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyMode);
 const ui = { screen: "today", letter: null, active: null, draft: null, restEnd: null, dialog: null };
 
 const $ = (s) => document.querySelector(s);
@@ -9,19 +18,19 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const persist = () => save(db);
 
 // ---------- icons (small coloured strokes, Commander style) ----------
-const svg = (d, c, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 20 20" fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const svg = (d, c, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 20 20" fill="none" style="stroke:${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const I = {
-  today: svg('<rect x="3" y="4" width="14" height="13"/><path d="M3 8h14M7 2v4M13 2v4"/>', "#2E8B2E"),
-  programs: svg('<path d="M6 6h11M6 10h11M6 14h11M2 6h1M2 10h1M2 14h1"/>', "#7A3EC8"),
-  timer: svg('<circle cx="10" cy="11" r="6"/><path d="M10 11V7.5M8 2h4"/>', "#D07000"),
-  settings: svg('<circle cx="10" cy="10" r="3"/><path d="M10 2v3M10 15v3M2 10h3M15 10h3M4.5 4.5l2 2M13.5 13.5l2 2M4.5 15.5l2-2M13.5 6.5l2-2"/>', "#5B6B8A"),
-  disk: `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="5.5" width="13" height="6" fill="#DDE3EE" stroke="#5B6B8A"/><circle cx="12" cy="8.5" r="1" fill="#5B6B8A"/></svg>`,
-  check: `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#007A00" stroke-width="2.2" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>`,
-  skip: `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#808080" stroke-width="2" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>`,
-  cur: `<svg width="14" height="14" viewBox="0 0 16 16" fill="#FF8A8A" aria-hidden="true"><path d="M4 2l9 6-9 6z"/></svg>`,
-  page: (c) => `<svg width="14" height="14" viewBox="0 0 16 16" fill="#fff" stroke="${c}" aria-hidden="true"><rect x="3.5" y="1.5" width="9" height="13"/></svg>`,
-  minus: `<svg width="18" height="18" viewBox="0 0 18 18" stroke="#1A1A1A" stroke-width="2" aria-hidden="true"><path d="M4 9h10"/></svg>`,
-  plus: `<svg width="18" height="18" viewBox="0 0 18 18" stroke="#1A1A1A" stroke-width="2" aria-hidden="true"><path d="M4 9h10M9 4v10"/></svg>`,
+  today: svg('<rect x="3" y="4" width="14" height="13"/><path d="M3 8h14M7 2v4M13 2v4"/>', "var(--ic-green)"),
+  programs: svg('<path d="M6 6h11M6 10h11M6 14h11M2 6h1M2 10h1M2 14h1"/>', "var(--ic-purple)"),
+  timer: svg('<circle cx="10" cy="11" r="6"/><path d="M10 11V7.5M8 2h4"/>', "var(--ic-orange)"),
+  settings: svg('<circle cx="10" cy="10" r="3"/><path d="M10 2v3M10 15v3M2 10h3M15 10h3M4.5 4.5l2 2M13.5 13.5l2 2M4.5 15.5l2-2M13.5 6.5l2-2"/>', "var(--ic-slate)"),
+  disk: `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="5.5" width="13" height="6" style="fill:var(--ic-disk);stroke:var(--ic-slate)"/><circle cx="12" cy="8.5" r="1" style="fill:var(--ic-slate)"/></svg>`,
+  check: `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="stroke:var(--ic-ok)" stroke-width="2.2" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>`,
+  skip: `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="stroke:var(--ic-grey)" stroke-width="2" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>`,
+  cur: `<svg width="14" height="14" viewBox="0 0 16 16" style="fill:var(--active-txt)" aria-hidden="true"><path d="M4 2l9 6-9 6z"/></svg>`,
+  page: (c) => `<svg width="14" height="14" viewBox="0 0 16 16" style="fill:var(--ctl);stroke:${c}" aria-hidden="true"><rect x="3.5" y="1.5" width="9" height="13"/></svg>`,
+  minus: `<svg width="18" height="18" viewBox="0 0 18 18" style="stroke:var(--ico)" stroke-width="2" aria-hidden="true"><path d="M4 9h10"/></svg>`,
+  plus: `<svg width="18" height="18" viewBox="0 0 18 18" style="stroke:var(--ico)" stroke-width="2" aria-hidden="true"><path d="M4 9h10M9 4v10"/></svg>`,
 };
 
 // ---------- state helpers ----------
@@ -110,12 +119,12 @@ function today() {
 
   const warm = s?.warmup;
   const rows = [`<button class="row ${warm ? "done" : "todo"}" data-act="warmup">
-      <span class="ic">${warm ? I.check : I.page("#3050C8")}</span><span>Warm-up 5–10 min</span><span>walk / bike</span><span>${warm ? "1/1" : "0/1"}</span></button>`];
+      <span class="ic">${warm ? I.check : I.page("var(--ic-page)")}</span><span>Warm-up 5–10 min</span><span>walk / bike</span><span>${warm ? "1/1" : "0/1"}</span></button>`];
   w.items.forEach((it, i) => {
     const ex = db.exercises[it.ex];
     const st = L.itemState(s, it);
     const isActive = it.ex === ui.active;
-    let cls = "todo", ic = I.page("#6B1FD6"), info = L.targetText(db, it).replace(/ · /, " · ");
+    let cls = "todo", ic = I.page("var(--ic-page2)"), info = L.targetText(db, it).replace(/ · /, " · ");
     if (st.status === "done") {
       cls = "done"; ic = I.check;
       info = ex.type === "timed" ? st.sets.map((x) => x.reps + "s").join(",") : `${st.sets[st.sets.length - 1].kg ? L.fmtKg(st.sets[st.sets.length - 1].kg) + " kg" : "BW"} × ${st.sets.map((x) => x.reps).join(",")}`;
@@ -182,8 +191,8 @@ function detail() {
         ${finished ? `<button class="btn" data-act="undo">Undo last</button>` : `
           <div class="setlabel">Set ${setNo} of ${item.sets}</div>
           <div class="steppers">
-            ${timed ? "" : stepper("kg", "weight", kgVal, "#0A3EC8", `KG · step ${L.fmtKg(ex.step)}`)}
-            ${stepper("reps", timed ? "seconds" : "reps", d.reps, "#007A00", timed ? "SECONDS" : "REPS")}
+            ${timed ? "" : stepper("kg", "weight", kgVal, "var(--blue)", `KG · step ${L.fmtKg(ex.step)}`)}
+            ${stepper("reps", timed ? "seconds" : "reps", d.reps, "var(--green)", timed ? "SECONDS" : "REPS")}
           </div>
           <button class="btn primary log" data-act="log">Log set ${setNo} · then rest ${fmtRest(db.settings.restSec)}</button>
           ${st.sets.length ? `<button class="btn" data-act="undo">Undo last</button>` : ""}`}
@@ -227,6 +236,8 @@ function programs() {
 function settings() {
   return `<div class="panel"><div class="pathbar">▾ gym:\\settings</div><div class="detail">
     <div class="noterow"><label for="rest">Rest (s)</label><input id="rest" type="number" inputmode="numeric" value="${db.settings.restSec}"></div>
+    <div class="setlabel">Appearance</div>
+    <div class="seg">${MODES.map((m) => `<button class="btn ${(db.settings.mode || "auto") === m ? "primary" : ""}" data-act="mode" data-v="${m}">${m[0].toUpperCase() + m.slice(1)}</button>`).join("")}</div>
     <div class="setlabel">Backup</div>
     <p class="small">Data lives on this phone until we switch to Firestore. Export now and then to be safe.</p>
     <button class="btn" data-act="export">Export backup (.json)</button>
@@ -318,6 +329,7 @@ const act = {
     const ex = db.exercises[ui.active];
     ui.dialog = { title: ex.name, body: `<div class="guideimg">Illustration coming</div><p>${esc(ex.cue)}</p>${ex.note ? `<p class="notecol">Note: ${esc(ex.note)}</p>` : ""}` };
   },
+  mode: (v) => { db.settings.mode = v; persist(); applyMode(); },
   close: () => { ui.dialog = null; },
   noop: () => "norender",
   focusnote: () => { const n = $("#xnote"); if (n) { n.focus(); n.select(); } return "norender"; },
