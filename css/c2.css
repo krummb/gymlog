@@ -28,10 +28,12 @@ button, input { font:inherit; color:inherit; }
 .pathbar .right { margin-left:auto; color:var(--green); font-weight:bold; }
 
 .panel { border:1px solid var(--line); background:var(--panel); }
-.thead { display:grid; grid-template-columns:18px 1fr 108px 34px; height:20px; align-items:center; padding:0 4px; background:var(--win); border-bottom:1px solid #C8C8C8; font-weight:bold; }
-.row { display:grid; grid-template-columns:18px 1fr 108px 34px; align-items:center; width:100%; min-height:24px; padding:0 4px; border:0; background:#fff; text-align:left; }
+.thead { display:grid; grid-template-columns:18px minmax(0,1fr) 122px 30px; column-gap:8px; height:20px; align-items:center; padding:0 4px; background:var(--win); border-bottom:1px solid #C8C8C8; font-weight:bold; }
+.row { display:grid; grid-template-columns:18px minmax(0,1fr) 122px 30px; column-gap:8px; align-items:center; width:100%; min-height:24px; padding:0 4px; border:0; background:#fff; text-align:left; }
 .row.alt { background:#EDEDED; }
 .row .ic { display:flex; }
+.row > span, .thead > span { white-space:nowrap; }
+.row > span:last-child, .thead > span:last-child { text-align:right; }
 .row .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .row.todo { color:var(--purple); }
 .row.done { color:var(--green); }
