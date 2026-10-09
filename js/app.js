@@ -238,9 +238,9 @@ function settings() {
 
 function dialog() {
   const d = ui.dialog;
-  return `<div class="overlay" data-act="close"><div class="win" role="dialog" aria-label="${esc(d.title)}" onclick="event.stopPropagation()">
+  return `<div class="overlay" data-act="close"><div class="win" role="dialog" aria-label="${esc(d.title)}" data-act="noop">
     <div class="title">${esc(d.title)}<button class="x" data-act="close" aria-label="Close">×</button></div>
-    <div class="detail">${d.body}</div></div></div>`;
+    <div class="detail">${d.body}${d.ok === false ? "" : '<button class="btn primary wide" data-act="close">OK</button>'}</div></div></div>`;
 }
 
 // ---------- rest timer ----------
@@ -319,6 +319,7 @@ const act = {
     ui.dialog = { title: ex.name, body: `<div class="guideimg">Illustration coming</div><p>${esc(ex.cue)}</p>${ex.note ? `<p class="notecol">Note: ${esc(ex.note)}</p>` : ""}` };
   },
   close: () => { ui.dialog = null; },
+  noop: () => "norender",
   focusnote: () => { const n = $("#xnote"); if (n) { n.focus(); n.select(); } return "norender"; },
   rest: () => { startRest(); return "norender"; },
   finish: () => {
@@ -328,7 +329,7 @@ const act = {
     if (open && !confirm(`${open} exercise(s) not done. Finish anyway?`)) return;
     L.finishSession(db, s); persist();
     ui.letter = L.nextLetter(db); setActive(null); ui.restEnd = null;
-    ui.dialog = { title: "Workout logged", body: `<p>Nice. Next time: workout ${ui.letter} · ${esc(workout().name)}.</p><button class="btn primary wide" data-act="close">OK</button>` };
+    ui.dialog = { title: "Workout logged", body: `<p>Nice. Next time: workout ${ui.letter} · ${esc(workout().name)}.</p>`, ok: true };
   },
   psets: (_, el) => {
     const it = db.workouts[el.dataset.l].items[+el.dataset.i];
