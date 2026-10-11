@@ -76,7 +76,7 @@ export function lastText(ex) {
 
 export function newSession(db, letter) {
   const id = new Date().toISOString();
-  const s = { id, workout: letter, startedAt: id, finishedAt: null, warmup: false, entries: {} };
+  const s = { id, workout: letter, startedAt: id, finishedAt: null, warmup: false, warmStart: null, warmSec: 0, entries: {} };
   db.sessions[id] = s;
   return s;
 }

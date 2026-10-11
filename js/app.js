@@ -11,7 +11,7 @@ function applyMode() {
 }
 applyMode();
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyMode);
-const ui = { screen: "today", letter: null, active: null, draft: null, restEnd: null, dialog: null };
+const ui = { overUntil: 0, screen: "today", letter: null, active: null, draft: null, restEnd: null, dialog: null };
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -114,12 +114,19 @@ function today() {
     return `<button class="drive ${l === ui.letter ? "sel" : ""}" data-act="letter" data-v="${l}" aria-label="Workout ${l}${isDone ? ", done" : ""}">${I.disk}${l}${isDone ? '<b class="ok">✓</b>' : ""}</button>`;
   }).join("");
 
-  if (!ui.active || !w.items.some((i) => i.ex === ui.active)) setActive(firstOpenItem()?.ex || null);
+  if (!ui.active || (ui.active !== WARM && !w.items.some((i) => i.ex === ui.active))) {
+    const fresh = !s || !!s.warmStart || (!s.warmup && !Object.keys(s.entries).length);
+    setActive(fresh ? WARM : firstOpenItem()?.ex || null);
+  }
   const doneCount = w.items.filter((it) => ["done", "skipped"].includes(L.itemState(s, it).status)).length;
 
   const warm = s?.warmup;
-  const rows = [`<button class="row ${warm ? "done" : "todo"}" data-act="warmup">
-      <span class="ic">${warm ? I.check : I.page("var(--ic-page)")}</span><span>Warm-up 5–10 min</span><span>walk / bike</span><span>${warm ? "1/1" : "0/1"}</span></button>`];
+  const warming = !!s?.warmStart;
+  const wInfo = warm ? (s.warmSec ? Math.max(1, Math.round(s.warmSec / 60)) + " min" : "done") : warming ? "running…" : "walk / bike";
+  const wActive = ui.active === WARM;
+  const wIc = wActive ? I.cur : warm ? I.check : I.page("var(--ic-page)");
+  const rows = [`<button class="row ${warm ? "done" : "todo"} ${wActive ? "active" : ""}" data-act="warmup">
+      <span class="ic">${wIc}</span><span>Warm-up 5–10 min</span><span>${wInfo}</span><span>${warm ? "1/1" : "0/1"}</span></button>`];
   w.items.forEach((it, i) => {
     const ex = db.exercises[it.ex];
     const st = L.itemState(s, it);
@@ -143,8 +150,30 @@ function today() {
       ${rows.join("")}
       <div class="status">${doneCount} / ${w.items.length} exercises done${s ? "" : " · not started"}</div>
     </div>
-    ${ui.active ? detail() : ""}
+    ${ui.active === WARM ? warmDetail() : ui.active ? detail() : ""}
     ${allClosed || s ? `<button class="btn finish ${allClosed ? "primary" : ""}" data-act="finish">${allClosed ? "Finish workout " + ui.letter : "Finish workout early"}</button>` : ""}`;
+}
+
+const WARM = "__warm";
+const fmtClock = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+
+function warmDetail() {
+  const s = session();
+  const running = !!s?.warmStart;
+  const done = !!s?.warmup;
+  const elapsed = running ? Math.floor((Date.now() - Date.parse(s.warmStart)) / 1000) : done ? s.warmSec || 0 : 0;
+  return `
+    <div class="panel">
+      <div class="pathbar">▾ gym:\\${esc(ui.letter)}\\Warm-up\\timer</div>
+      <div class="detail">
+        <div class="warmclock ${elapsed >= 300 ? "reached" : ""}" id="warmclock">${fmtClock(elapsed)}</div>
+        <div class="last">${done ? (s.warmSec ? "Warm-up done · " + fmtClock(s.warmSec) : "Warm-up done") : "Target 5–10 min · easy walk or bike, enough to feel warm"}</div>
+        ${done ? `<button class="btn" data-act="warmundo">Undo warm-up</button>`
+          : running ? `<button class="btn primary log" data-act="warmstop">Stop · warm-up done</button>`
+          : `<button class="btn primary log" data-act="warmstart">Start warm-up</button><button class="btn" data-act="warmdone">Mark done (no timer)</button>`}
+        ${elapsed >= 300 && running ? `<div class="hint">5 min reached. Stop whenever you feel warm.</div>` : ""}
+      </div>
+    </div>`;
 }
 
 function detail() {
@@ -264,19 +293,23 @@ function tick() {
   clearTimeout(timerId);
   const el = $("#restclock");
   if (!el) return;
-  if (!ui.restEnd) { el.textContent = ""; return; }
-  const left = Math.ceil((ui.restEnd - Date.now()) / 1000);
-  if (left <= 0) {
-    el.textContent = "REST OVER";
-    el.classList.add("over");
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    ui.restEnd = null;
-    timerId = setTimeout(() => { el.textContent = ""; el.classList.remove("over"); }, 4000);
-    return;
+  const now = Date.now();
+  const sess = L.openSession(db);
+  const warming = !!(sess && sess.warmStart);
+  const wsec = warming ? Math.floor((now - Date.parse(sess.warmStart)) / 1000) : 0;
+  const wc = $("#warmclock");
+  if (warming && wc) { wc.textContent = fmtClock(wsec); wc.classList.toggle("reached", wsec >= 300); }
+  let text = "", over = false;
+  if (ui.restEnd) {
+    const left = Math.ceil((ui.restEnd - now) / 1000);
+    if (left <= 0) { ui.restEnd = null; ui.overUntil = now + 4000; if (navigator.vibrate) navigator.vibrate([200, 100, 200]); }
+    else text = "Rest " + fmtRest(left);
   }
-  el.classList.remove("over");
-  el.textContent = "Rest " + fmtRest(left);
-  timerId = setTimeout(tick, 250);
+  if (!text && ui.overUntil > now) { text = "REST OVER"; over = true; }
+  if (!text && warming) text = "Warm " + fmtClock(wsec);
+  el.textContent = text;
+  el.classList.toggle("over", over);
+  if (ui.restEnd || ui.overUntil > now || warming) timerId = setTimeout(tick, 250);
 }
 
 // ---------- actions ----------
@@ -284,7 +317,16 @@ const act = {
   screen: (v) => { ui.screen = v; },
   letter: (v) => { ui.letter = v; setActive(null); },
   pick: (v) => { setActive(v); },
-  warmup: () => { const s = ensureSession(); if (!s) return; s.warmup = !s.warmup; persist(); },
+  warmup: () => { setActive(WARM); },
+  warmstart: () => { const s = ensureSession(); if (!s) return; s.warmStart = new Date().toISOString(); s.warmup = false; s.warmSec = 0; persist(); },
+  warmstop: () => {
+    const s = session(); if (!s || !s.warmStart) return;
+    s.warmSec = Math.round((Date.now() - Date.parse(s.warmStart)) / 1000);
+    s.warmStart = null; s.warmup = true; persist();
+    const n = firstOpenItem(); setActive(n ? n.ex : null);
+  },
+  warmdone: () => { const s = ensureSession(); if (!s) return; s.warmup = true; s.warmSec = 0; persist(); const n = firstOpenItem(); setActive(n ? n.ex : null); },
+  warmundo: () => { const s = session(); if (!s) return; s.warmup = false; s.warmStart = null; s.warmSec = 0; persist(); },
   inc: (f) => bump(f, 1),
   dec: (f) => bump(f, -1),
   log: () => {
@@ -306,13 +348,13 @@ const act = {
     ui.draft = null; persist();
   },
   skip: () => {
-    if (!ui.active) return;
+    if (!ui.active || ui.active === WARM) return "norender";
     const s = ensureSession(); if (!s) return;
     const e = L.entryFor(s, ui.active); e.status = "skipped"; persist();
     const n = firstOpenItem(); setActive(n ? n.ex : ui.active);
   },
   swap: () => {
-    if (!ui.active) return;
+    if (!ui.active || ui.active === WARM) return "norender";
     const w = workout();
     const opts = Object.entries(db.exercises).filter(([id]) => !w.items.some((i) => i.ex === id))
       .map(([id, e]) => `<button class="btn wide" data-act="doswap" data-v="${id}">${esc(e.name)}</button>`).join("");
@@ -325,7 +367,7 @@ const act = {
     ui.dialog = null;
   },
   guide: () => {
-    if (!ui.active) return;
+    if (!ui.active || ui.active === WARM) return "norender";
     const ex = db.exercises[ui.active];
     ui.dialog = { title: ex.name, body: `<div class="guideimg">Illustration coming</div><p>${esc(ex.cue)}</p>${ex.note ? `<p class="notecol">Note: ${esc(ex.note)}</p>` : ""}` };
   },
