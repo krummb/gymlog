@@ -1,5 +1,6 @@
-import { load, save, exportJson, importJson } from "./store.js";
+import { load, save, saveLocal, exportJson, importJson } from "./store.js";
 import * as L from "./logic.js";
+import * as sync from "./sync.js";
 
 let db = load();
 const MODES = ["auto", "light", "dark"];
@@ -262,17 +263,34 @@ function programs() {
   }).join("") + `<p class="small">Tap a step size to change it (one machine notch). Sets: 1 in weeks 1–2, 2 from week 3.</p>`;
 }
 
+function syncBlock() {
+  const s = sync.status();
+  let line, btn = "";
+  if (s.state === "signedin") {
+    line = `Signed in as ${esc(s.user)} · ${!s.online ? "offline, changes are kept here and upload when you're back online" : s.pending ? `saving ${s.pending}…` : "all changes saved to the cloud"}`;
+    btn = `<button class="btn" data-act="signout">Sign out</button>`;
+  } else if (s.state === "signedout") {
+    line = "Not signed in. Your data is only on this device.";
+    btn = `<button class="btn primary" data-act="signin">Sign in with Google</button>`;
+  } else if (s.state === "unavailable") {
+    line = "Sync unavailable: " + esc(s.error) + ". Everything still works on this device.";
+    btn = `<button class="btn" data-act="signin">Try again</button>`;
+  } else line = "Starting sync…";
+  return `<div class="setlabel">Sync</div><p class="small">${line}</p>${btn}${s.error && s.state !== "unavailable" ? `<p class="small">Sync error: ${esc(s.error)}</p>` : ""}`;
+}
+
 function settings() {
   return `<div class="panel"><div class="pathbar">▾ gym:\\settings</div><div class="detail">
     <div class="noterow"><label for="rest">Rest (s)</label><input id="rest" type="number" inputmode="numeric" value="${db.settings.restSec}"></div>
     <div class="setlabel">Appearance</div>
     <div class="seg">${MODES.map((m) => `<button class="btn ${(db.settings.mode || "auto") === m ? "primary" : ""}" data-act="mode" data-v="${m}">${m[0].toUpperCase() + m.slice(1)}</button>`).join("")}</div>
+    ${syncBlock()}
     <div class="setlabel">Backup</div>
-    <p class="small">Data lives on this phone until we switch to Firestore. Export now and then to be safe.</p>
+    <p class="small">A file copy as an extra safety net. Importing a backup overwrites matching data in the cloud too.</p>
     <button class="btn" data-act="export">Export backup (.json)</button>
     <button class="btn" data-act="import">Import backup…</button>
     <input type="file" id="importfile" accept="application/json" hidden>
-    <p class="small">${L.sessionCount(db)} sessions logged · version 0.1</p>
+    <p class="small">${L.sessionCount(db)} sessions logged · version 0.3.0</p>
   </div></div>`;
 }
 
@@ -405,6 +423,8 @@ const act = {
     return "norender";
   },
   import: () => { $("#importfile").click(); return "norender"; },
+  signin: () => { sync.signIn(); return "norender"; },
+  signout: () => { sync.signOut(); return "norender"; },
 };
 
 function bump(field, dir) {
@@ -448,5 +468,22 @@ document.addEventListener("pointerdown", (e) => {
 
 pickLetter();
 render();
+
+// ---------- cloud sync (optional; the app works fully without it) ----------
+// Redraw unless the user is typing, so a background update never steals the keyboard.
+function softRender() {
+  const a = document.activeElement;
+  if (a && /^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
+  render();
+}
+sync.onStatus(() => { if (ui.screen === "settings") softRender(); });
+sync.start({
+  getDb: () => db,
+  afterRemote: () => {            // something changed on another device
+    saveLocal(db);
+    if (!L.openSession(db)) pickLetter();
+    softRender();
+  },
+});
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});

@@ -1,7 +1,7 @@
-// Storage layer. Today: the phone's localStorage.
-// Later: same shape in Firestore (users/{uid}/exercises, workouts, sessions, settings),
-// so only this file changes when we switch.
+// Storage layer. The device's localStorage is the instant, offline copy the UI reads and writes.
+// sync.js mirrors it to Firestore when signed in (users/{uid}/data/config + users/{uid}/sessions/{key}).
 import { SEED_VERSION, seedExercises, seedWorkouts, seedSettings } from "./seed.js";
+import { push } from "./sync.js";
 
 const KEY = "gymlog.v1";
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -22,9 +22,16 @@ export function load() {
   return db;
 }
 
-export function save(db) {
+// Device only (also used when applying changes that came from Firestore).
+export function saveLocal(db) {
   try { localStorage.setItem(KEY, JSON.stringify(db)); }
   catch (e) { alert("Could not save on this device: " + e.message); }
+}
+
+// Device first (instant, works offline), then mirror to Firestore when signed in.
+export function save(db) {
+  saveLocal(db);
+  push();
 }
 
 export function exportJson(db) {
