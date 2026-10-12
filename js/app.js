@@ -271,7 +271,7 @@ function settings() {
     <button class="btn" data-act="export">Export backup (.json)</button>
     <button class="btn" data-act="import">Import backup…</button>
     <input type="file" id="importfile" accept="application/json" hidden>
-    <p class="small">${L.sessionCount(db)} sessions logged · version 0.1</p>
+    <p class="small">${L.sessionCount(db)} sessions logged · version ${window.APP_VERSION || "?"}</p>
   </div></div>`;
 }
 
