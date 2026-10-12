@@ -17,6 +17,8 @@ function migrate(db) {
   for (const [id, e] of Object.entries(seedExercises)) {
     if (!db.exercises[id]) db.exercises[id] = { ...clone(e), note: "", last: null };
     else if (e.scale && !("scale" in db.exercises[id])) db.exercises[id].scale = clone(e.scale);
+    else if (e.scale && db.exercises[id].scale && db.exercises[id].scale.unit !== e.scale.unit
+      && JSON.stringify(db.exercises[id].scale.values) === JSON.stringify(e.scale.values)) db.exercises[id].scale.unit = e.scale.unit; // unit corrected (lb -> kg), values untouched
   }
   return db;
 }
