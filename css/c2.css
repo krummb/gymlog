@@ -18,13 +18,10 @@ button, input { font:inherit; color:inherit; }
 #app { max-width:520px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; }
 
 .title { background:var(--bar); color:#fff; font-weight:bold; min-height:28px; display:flex; align-items:center; padding:0 8px; padding-top:env(safe-area-inset-top); flex:none; }
-.menu { display:flex; gap:4px; padding:0 4px; flex:none; }
+.menu { display:flex; align-items:center; gap:4px; padding:0 4px; flex:none; min-height:36px; border-bottom:1px solid var(--hair2); }
 .menu button { background:none; border:1px solid transparent; height:28px; padding:0 8px; }
 .menu button.on { background:var(--sel); border-color:var(--selline); }
-.toolbar { display:flex; align-items:center; padding:0 4px; border-bottom:1px solid var(--hair2); flex:none; }
-.toolbar button { width:42px; height:36px; border:1px solid transparent; background:none; display:flex; align-items:center; justify-content:center; }
-.toolbar button:active { border-color:var(--btnline); background:var(--btn); }
-.restclock { margin-left:auto; padding-right:6px; font:bold 24px "Courier New", monospace; color:var(--rest); }
+.restclock { margin-left:auto; white-space:nowrap; padding-right:6px; font:bold 24px "Courier New", monospace; color:var(--rest); }
 .restclock.over { color:#fff; background:#C23B3B; padding:0 6px; }
 
 .body { flex:1; overflow-y:auto; padding:6px 8px 8px; display:flex; flex-direction:column; gap:6px; }
@@ -108,3 +105,16 @@ footer { flex:none; padding:4px 8px calc(8px + env(safe-area-inset-bottom)); dis
 .seg .btn { flex:1; height:40px; }
 .warmclock { font:bold 44px "Courier New", monospace; text-align:center; color:var(--blue); padding:6px 0 2px; }
 .warmclock.reached { color:var(--green); }
+
+/* finished exercise selected: keep the check icon, lighter green text on the highlight */
+.row.active.done { color:#9BF59B; }
+.row.active.done svg { stroke:#9BF59B !important; }
+.row.active.skipped { color:#C8CCD4; }
+/* no double-tap zoom */
+html, body, button, input { touch-action:manipulation; }
+/* portrait only: landscape shows a hint instead of a cramped layout */
+#rotate { display:none; }
+@media (orientation:landscape) and (max-height:520px) {
+  #app { display:none; }
+  #rotate { display:flex; position:fixed; inset:0; align-items:center; justify-content:center; text-align:center; padding:24px; font-size:16px; font-weight:bold; background:var(--win); color:var(--txt); }
+}

@@ -32,6 +32,7 @@ export function cycleDone(db) {
 }
 
 export function sessionCount(db) { return finishedSessions(db).length; }
+export function sessionCountFor(db, letter) { return finishedSessions(db).filter((x) => x.workout === letter).length; }
 
 // Today's target for one program item, from the exercise's last result
 export function target(db, item) {
@@ -76,7 +77,7 @@ export function lastText(ex) {
 
 export function newSession(db, letter) {
   const id = new Date().toISOString();
-  const s = { id, workout: letter, startedAt: id, finishedAt: null, warmup: false, warmStart: null, warmSec: 0, entries: {} };
+  const s = { id, workout: letter, startedAt: id, finishedAt: null, warmup: false, warmStart: null, warmAt: null, warmSec: 0, entries: {} };
   db.sessions[id] = s;
   return s;
 }

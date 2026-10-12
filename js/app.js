@@ -20,10 +20,6 @@ const persist = () => save(db);
 // ---------- icons (small coloured strokes, Commander style) ----------
 const svg = (d, c, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 20 20" fill="none" style="stroke:${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const I = {
-  today: svg('<rect x="3" y="4" width="14" height="13"/><path d="M3 8h14M7 2v4M13 2v4"/>', "var(--ic-green)"),
-  programs: svg('<path d="M6 6h11M6 10h11M6 14h11M2 6h1M2 10h1M2 14h1"/>', "var(--ic-purple)"),
-  timer: svg('<circle cx="10" cy="11" r="6"/><path d="M10 11V7.5M8 2h4"/>', "var(--ic-orange)"),
-  settings: svg('<circle cx="10" cy="10" r="3"/><path d="M10 2v3M10 15v3M2 10h3M15 10h3M4.5 4.5l2 2M13.5 13.5l2 2M4.5 15.5l2-2M13.5 6.5l2-2"/>', "var(--ic-slate)"),
   disk: `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="5.5" width="13" height="6" style="fill:var(--ic-disk);stroke:var(--ic-slate)"/><circle cx="12" cy="8.5" r="1" style="fill:var(--ic-slate)"/></svg>`,
   check: `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="stroke:var(--ic-ok)" stroke-width="2.2" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>`,
   skip: `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="stroke:var(--ic-grey)" stroke-width="2" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>`,
@@ -88,14 +84,8 @@ function render() {
       <button data-act="screen" data-v="today" class="${ui.screen === "today" ? "on" : ""}"><u>T</u>oday</button>
       <button data-act="screen" data-v="programs" class="${ui.screen === "programs" ? "on" : ""}"><u>P</u>rograms</button>
       <button data-act="screen" data-v="settings" class="${ui.screen === "settings" ? "on" : ""}"><u>S</u>ettings</button>
-    </nav>
-    <div class="toolbar">
-      <button aria-label="Today" data-act="screen" data-v="today">${I.today}</button>
-      <button aria-label="Programs" data-act="screen" data-v="programs">${I.programs}</button>
-      <button aria-label="Rest timer" data-act="rest">${I.timer}</button>
-      <button aria-label="Settings" data-act="screen" data-v="settings">${I.settings}</button>
       <span class="restclock" id="restclock"></span>
-    </div>
+    </nav>
     <main class="body">${ui.screen === "today" ? today() : ui.screen === "programs" ? programs() : settings()}</main>
     ${ui.screen === "today" ? footer() : ""}
     ${ui.dialog ? dialog() : ""}`;
@@ -122,7 +112,9 @@ function today() {
 
   const warm = s?.warmup;
   const warming = !!s?.warmStart;
-  const wInfo = warm ? (s.warmSec ? Math.max(1, Math.round(s.warmSec / 60)) + " min" : "done") : warming ? "running…" : "walk / bike";
+  const wAt = s?.warmAt ? new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "";
+  const wMin = s?.warmSec ? Math.max(1, Math.round(s.warmSec / 60)) + " min" : "done";
+  const wInfo = warm ? (wAt && s.warmSec ? `${wAt} · ${wMin}` : wMin) : warming ? `${wAt} · running` : "walk / bike";
   const wActive = ui.active === WARM;
   const wIc = wActive ? I.cur : warm ? I.check : I.page("var(--ic-page)");
   const rows = [`<button class="row ${warm ? "done" : "todo"} ${wActive ? "active" : ""}" data-act="warmup">
@@ -136,7 +128,7 @@ function today() {
       cls = "done"; ic = I.check;
       info = ex.type === "timed" ? st.sets.map((x) => x.reps + "s").join(",") : `${st.sets[st.sets.length - 1].kg ? L.fmtKg(st.sets[st.sets.length - 1].kg) + " kg" : "BW"} × ${st.sets.map((x) => x.reps).join(",")}`;
     } else if (st.status === "skipped") { cls = "skipped"; ic = I.skip; info = "skipped"; }
-    if (isActive) { cls += " active"; ic = I.cur; }
+    if (isActive) { cls += " active"; if (st.status === "todo") ic = I.cur; }
     rows.push(`<button class="row ${cls} ${i % 2 ? "" : "alt"}" data-act="pick" data-v="${it.ex}">
       <span class="ic">${ic}</span><span class="nm">${esc(ex.name)}</span><span>${esc(info)}</span><span>${st.sets.length}/${it.sets}</span></button>`);
   });
@@ -144,7 +136,7 @@ function today() {
   const allClosed = doneCount === w.items.length;
   return `
     <div class="drives">${drives}</div>
-    <div class="pathbar">▾ <span>gym:\\${esc(w.name.replace(" ", ""))}\\*.*</span><span class="right">${L.sessionCount(db)} sessions logged</span></div>
+    <div class="pathbar">▾ <span>gym:\\${esc(w.name.replace(" ", ""))}\\*.*</span><span class="right">${L.sessionCountFor(db, ui.letter)} ${L.sessionCountFor(db, ui.letter) === 1 ? "session" : "sessions"} logged</span></div>
     <div class="panel">
       <div class="thead"><span></span><span>Name</span><span>Today</span><span>Sets</span></div>
       ${rows.join("")}
@@ -167,7 +159,7 @@ function warmDetail() {
       <div class="pathbar">▾ gym:\\${esc(ui.letter)}\\Warm-up\\timer</div>
       <div class="detail">
         <div class="warmclock ${elapsed >= 300 ? "reached" : ""}" id="warmclock">${fmtClock(elapsed)}</div>
-        <div class="last">${done ? (s.warmSec ? "Warm-up done · " + fmtClock(s.warmSec) : "Warm-up done") : "Target 5–10 min · easy walk or bike, enough to feel warm"}</div>
+        <div class="last">${done ? (s.warmSec ? "Warm-up done · " + fmtClock(s.warmSec) + (s.warmAt ? " · started " + new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "") : "Warm-up done") : running && s.warmAt ? "Started " + new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + " · target 5–10 min" : "Target 5–10 min · easy walk or bike, enough to feel warm"}</div>
         ${done ? `<button class="btn" data-act="warmundo">Undo warm-up</button>`
           : running ? `<button class="btn primary log" data-act="warmstop">Stop · warm-up done</button>`
           : `<button class="btn primary log" data-act="warmstart">Start warm-up</button><button class="btn" data-act="warmdone">Mark done (no timer)</button>`}
@@ -318,15 +310,15 @@ const act = {
   letter: (v) => { ui.letter = v; setActive(null); },
   pick: (v) => { setActive(v); },
   warmup: () => { setActive(WARM); },
-  warmstart: () => { const s = ensureSession(); if (!s) return; s.warmStart = new Date().toISOString(); s.warmup = false; s.warmSec = 0; persist(); },
+  warmstart: () => { const s = ensureSession(); if (!s) return; s.warmStart = new Date().toISOString(); s.warmAt = s.warmStart; s.warmup = false; s.warmSec = 0; persist(); },
   warmstop: () => {
     const s = session(); if (!s || !s.warmStart) return;
     s.warmSec = Math.round((Date.now() - Date.parse(s.warmStart)) / 1000);
     s.warmStart = null; s.warmup = true; persist();
     const n = firstOpenItem(); setActive(n ? n.ex : null);
   },
-  warmdone: () => { const s = ensureSession(); if (!s) return; s.warmup = true; s.warmSec = 0; persist(); const n = firstOpenItem(); setActive(n ? n.ex : null); },
-  warmundo: () => { const s = session(); if (!s) return; s.warmup = false; s.warmStart = null; s.warmSec = 0; persist(); },
+  warmdone: () => { const s = ensureSession(); if (!s) return; s.warmup = true; s.warmSec = 0; s.warmAt = null; persist(); const n = firstOpenItem(); setActive(n ? n.ex : null); },
+  warmundo: () => { const s = session(); if (!s) return; s.warmup = false; s.warmStart = null; s.warmAt = null; s.warmSec = 0; persist(); },
   inc: (f) => bump(f, 1),
   dec: (f) => bump(f, -1),
   log: () => {
