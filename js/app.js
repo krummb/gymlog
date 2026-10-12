@@ -126,7 +126,7 @@ function today() {
     let cls = "todo", ic = I.page("var(--ic-page2)"), info = L.targetText(db, it).replace(/ · /, " · ");
     if (st.status === "done") {
       cls = "done"; ic = I.check;
-      info = ex.type === "timed" ? st.sets.map((x) => x.reps + "s").join(",") : `${st.sets[st.sets.length - 1].kg ? L.fmtKg(st.sets[st.sets.length - 1].kg) + " kg" : "BW"} × ${st.sets.map((x) => x.reps).join(",")}`;
+      info = ex.type === "timed" ? st.sets.map((x) => x.reps + "s").join(",") : `${st.sets[st.sets.length - 1].kg ? L.fmtKg(st.sets[st.sets.length - 1].kg) + " " + L.unitOf(ex) : "BW"} × ${st.sets.map((x) => x.reps).join(",")}`;
     } else if (st.status === "skipped") { cls = "skipped"; ic = I.skip; info = "skipped"; }
     if (isActive) { cls += " active"; if (st.status === "todo") ic = I.cur; }
     rows.push(`<button class="row ${cls} ${i % 2 ? "" : "alt"}" data-act="pick" data-v="${it.ex}">
@@ -184,9 +184,9 @@ function detail() {
     ? `Today: ${item.sets} × ${t.reps} s (range ${item.min}–${item.max})`
     : t.first
       ? `First time: pick a weight that leaves 3–4 reps in reserve`
-      : `Today: ${t.kg ? L.fmtKg(t.kg) + " kg" : "BW"} · ${item.sets} × ${item.min}–${item.max}${t.up ? " ↑" : ""}`;
+      : `Today: ${t.kg ? L.fmtKg(t.kg) + " " + L.unitOf(ex) : "BW"} · ${item.sets} × ${item.min}–${item.max}${t.up ? " ↑" : ""}`;
 
-  const logged = st.sets.map((x, i) => `<div class="logged">[x] Set ${i + 1} · ${timed ? x.reps + " s" : (x.kg ? L.fmtKg(x.kg) + " kg" : "BW") + " × " + x.reps}</div>`).join("");
+  const logged = st.sets.map((x, i) => `<div class="logged">[x] Set ${i + 1} · ${timed ? x.reps + " s" : (x.kg ? L.fmtKg(x.kg) + " " + L.unitOf(ex) : "BW") + " × " + x.reps}</div>`).join("");
 
   const stepper = (field, label, val, color, cap) => `
     <div class="stepper"><div class="cap">${cap}</div><div class="sr">
@@ -197,7 +197,7 @@ function detail() {
   const kgVal = d.kg == null || d.kg === 0 ? (ex.type === "weight" ? "0" : "BW") : L.fmtKg(d.kg);
   const hint = timed
     ? `All sets at ${item.max} s → +${ex.step} s next time`
-    : `${item.sets > 1 ? "All sets" : "Set"} at ${item.max} reps → +${L.fmtKg(ex.step)} kg next time`;
+    : `${item.sets > 1 ? "All sets" : "Set"} at ${item.max} reps → ${ex.scale ? "next weight on the stack" : "+" + L.fmtKg(ex.step) + " " + L.unitOf(ex)} next time`;
 
   return `
     <div class="panel">
@@ -212,7 +212,7 @@ function detail() {
         ${finished ? `<button class="btn" data-act="undo">Undo last</button>` : `
           <div class="setlabel">Set ${setNo} of ${item.sets}</div>
           <div class="steppers">
-            ${timed ? "" : stepper("kg", "weight", kgVal, "var(--blue)", `KG · step ${L.fmtKg(ex.step)}`)}
+            ${timed ? "" : stepper("kg", "weight", kgVal, "var(--blue)", ex.scale ? `${L.unitOf(ex).toUpperCase()} · machine scale` : `${L.unitOf(ex).toUpperCase()} · step ${L.fmtKg(ex.step)}`)}
             ${stepper("reps", timed ? "seconds" : "reps", d.reps, "var(--green)", timed ? "SECONDS" : "REPS")}
           </div>
           <button class="btn primary log" data-act="log">Log set ${setNo} · then rest ${fmtRest(db.settings.restSec)}</button>
@@ -247,11 +247,11 @@ function programs() {
         return `<div class="prow ${i % 2 ? "" : "alt"}"><span class="nm">${esc(ex.name)}</span>
           <span class="mini"><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="-1" aria-label="Fewer sets">−</button><b>${it.sets}</b><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="1" aria-label="More sets">+</button></span>
           <span>${it.min}–${it.max}${ex.type === "timed" ? "s" : ""}</span>
-          <span><button class="btn stepbtn" data-act="pstep" data-ex="${it.ex}">${L.fmtKg(ex.step)}${ex.type === "timed" ? "s" : ""}</button></span></div>`;
+          <span>${ex.scale ? `<button class="btn stepbtn" data-act="scaledlg" data-ex="${it.ex}">scale</button>` : `<button class="btn stepbtn" data-act="pstep" data-ex="${it.ex}">${L.fmtKg(ex.step)}${ex.type === "timed" ? "s" : ""}</button>`}</span></div>`;
       }).join("")}
-      <div class="status"><button class="btn" data-act="allsets" data-l="${l}">All to 2 sets</button></div>
+      <div class="status"><button class="btn" data-act="allsets" data-l="${l}">All to 3 sets</button></div>
     </div>`;
-  }).join("") + `<p class="small">Tap a step size to change it (one machine notch). Sets: 1 in weeks 1–2, 2 from week 3.</p>`;
+  }).join("") + `<p class="small">Tap a step size to change it (one machine notch), or “scale” for machines with a weight stack. Sets per exercise: − / +.</p>`;
 }
 
 function settings() {
@@ -259,6 +259,13 @@ function settings() {
     <div class="noterow"><label for="rest">Rest (s)</label><input id="rest" type="number" inputmode="numeric" value="${db.settings.restSec}"></div>
     <div class="setlabel">Appearance</div>
     <div class="seg">${MODES.map((m) => `<button class="btn ${(db.settings.mode || "auto") === m ? "primary" : ""}" data-act="mode" data-v="${m}">${m[0].toUpperCase() + m.slice(1)}</button>`).join("")}</div>
+    <div class="setlabel">Weight scales</div>
+    <p class="small">Machines with a weight stack step through their own list of weights, not a fixed step.</p>
+    <div class="scales">${Object.entries(db.exercises).filter(([, e]) => e.type !== "timed").map(([id, e]) => {
+      const v = e.scale && e.scale.values;
+      const sum = v && v.length ? `${v.slice(0, 3).join(" · ")} … ${v[v.length - 1]} ${e.scale.unit}` : `step ${L.fmtKg(e.step)} kg`;
+      return `<button class="srow" data-act="scaledlg" data-ex="${id}"><span class="nm">${esc(e.name)}</span><span class="${v ? "has" : ""}">${esc(sum)}</span></button>`;
+    }).join("")}</div>
     <div class="setlabel">Backup</div>
     <p class="small">Data lives on this phone until we switch to Firestore. Export now and then to be safe.</p>
     <button class="btn" data-act="export">Export backup (.json)</button>
@@ -364,6 +371,27 @@ const act = {
     ui.dialog = { title: ex.name, body: `<div class="guideimg">Illustration coming</div><p>${esc(ex.cue)}</p>${ex.note ? `<p class="notecol">Note: ${esc(ex.note)}</p>` : ""}` };
   },
   mode: (v) => { db.settings.mode = v; persist(); applyMode(); },
+  scaledlg: (_, el) => {
+    const id = el.dataset.ex, e = db.exercises[id];
+    const v = e.scale ? e.scale.values.join("  ") : "";
+    const u = e.scale ? e.scale.unit : "kg";
+    ui.dialog = { title: `Weight scale · ${e.name}`, ok: false, body: `
+      <p class="small">The weights this machine can select, lowest first, separated by spaces. Leave empty to use a fixed step (${L.fmtKg(e.step)} kg).</p>
+      <div class="noterow"><label for="sc_unit">Unit</label><select id="sc_unit"><option value="kg" ${u === "kg" ? "selected" : ""}>kg</option><option value="lb" ${u === "lb" ? "selected" : ""}>lb</option></select></div>
+      <textarea id="sc_vals" rows="5" placeholder="e.g. 5 10 15 20 25 …">${esc(v)}</textarea>
+      <button class="btn primary wide" data-act="savescale" data-ex="${id}">Save</button>
+      <button class="btn wide" data-act="close">Cancel</button>` };
+  },
+  savescale: (_, el) => {
+    const e = db.exercises[el.dataset.ex];
+    const raw = ($("#sc_vals").value || "").trim();
+    if (!raw) { e.scale = null; persist(); ui.dialog = null; return; }
+    const toks = raw.split(/[;\s]+|,\s+/).filter(Boolean);
+    if (toks.some((t) => !/^\d+([.,]\d+)?$/.test(t))) { alert("Use numbers separated by spaces, e.g. 9 14 18 23"); return "norender"; }
+    const values = [...new Set(toks.map((t) => parseFloat(t.replace(",", "."))))].sort((a, b) => a - b);
+    e.scale = { unit: $("#sc_unit").value, values };
+    persist(); ui.dialog = null;
+  },
   close: () => { ui.dialog = null; },
   noop: () => "norender",
   focusnote: () => { const n = $("#xnote"); if (n) { n.focus(); n.select(); } return "norender"; },
@@ -381,7 +409,7 @@ const act = {
     const it = db.workouts[el.dataset.l].items[+el.dataset.i];
     it.sets = Math.min(5, Math.max(1, it.sets + +el.dataset.d)); persist();
   },
-  allsets: (_, el) => { db.workouts[el.dataset.l].items.forEach((it) => (it.sets = Math.max(it.sets, 2))); persist(); },
+  allsets: (_, el) => { db.workouts[el.dataset.l].items.forEach((it) => (it.sets = Math.max(it.sets, 3))); persist(); },
   pstep: (_, el) => {
     const ex = db.exercises[el.dataset.ex];
     const v = prompt(`Step size for ${ex.name} (${ex.type === "timed" ? "seconds" : "kg"})`, ex.step);
@@ -403,7 +431,7 @@ function bump(field, dir) {
   const item = workout().items.find((i) => i.ex === ui.active);
   const ex = db.exercises[item.ex];
   const d = draftFor(item);
-  if (field === "kg") d.kg = Math.max(0, Math.round(((d.kg || 0) + dir * ex.step) * 100) / 100);
+  if (field === "kg") d.kg = L.stepWeight(ex, d.kg || 0, dir);
   else d.reps = Math.max(1, d.reps + dir * (ex.type === "timed" ? ex.step : 1));
 }
 

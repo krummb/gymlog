@@ -12,12 +12,22 @@ function fresh() {
   return { seed: SEED_VERSION, exercises, workouts: clone(seedWorkouts), sessions: {}, settings: clone(seedSettings) };
 }
 
+// Bring older saved data up to date: add exercises/scales that the seed has and the saved data lacks
+function migrate(db) {
+  for (const [id, e] of Object.entries(seedExercises)) {
+    if (!db.exercises[id]) db.exercises[id] = { ...clone(e), note: "", last: null };
+    else if (e.scale && !("scale" in db.exercises[id])) db.exercises[id].scale = clone(e.scale);
+  }
+  return db;
+}
+
 export function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) { const db = migrate(JSON.parse(raw)); save(db); return db; }
   } catch (e) { console.warn("load failed", e); }
   const db = fresh();
+  migrate(db);
   save(db);
   return db;
 }
@@ -34,6 +44,7 @@ export function exportJson(db) {
 export function importJson(text) {
   const db = JSON.parse(text);
   if (!db.exercises || !db.workouts || !db.sessions) throw new Error("Not a GymLog backup");
+  migrate(db);
   save(db);
   return db;
 }

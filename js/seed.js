@@ -3,7 +3,7 @@
 export const SEED_VERSION = 1;
 
 export const seedExercises = {
-  chest_press:     { name: "Chest press machine", type: "weight", step: 2.5, cue: "Handles at chest height. Press smoothly, return with control. Shoulders relaxed." },
+  chest_press:     { name: "Chest press machine", type: "weight", step: 2.5, scale: { unit: "lb", values: [9, 14, 18, 23, 27, 32, 36, 41, 46, 50, 55, 59, 64, 68, 73, 77, 82, 86, 91, 96, 100, 105, 109] }, cue: "Handles at chest height. Press smoothly, return with control. Shoulders relaxed." },
   seated_row:      { name: "Seated row", type: "weight", step: 2.5, cue: "Sit tall, pull towards lower ribs. No leaning or jerking." },
   shoulder_press:  { name: "Shoulder press machine", type: "weight", step: 2.5, cue: "Handles at shoulder height. Press up without arching your lower back." },
   biceps_curl:     { name: "Biceps curl", type: "weight", step: 1, cue: "Elbows still at your sides. Curl up, lower slowly." },

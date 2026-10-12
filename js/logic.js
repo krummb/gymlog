@@ -2,6 +2,20 @@
 export const LETTERS = ["A", "B", "C", "D"];
 
 const round = (n) => Math.round(n * 100) / 100;
+export const unitOf = (ex) => (ex.scale && ex.scale.unit) || "kg";
+
+// Next/previous selectable weight: walks the machine's scale if it has one, else a fixed step
+export function stepWeight(ex, cur, dir) {
+  cur = cur || 0;
+  const v = ex.scale && ex.scale.values;
+  if (v && v.length) {
+    if (dir > 0) { const n = v.find((x) => x > cur + 1e-9); return n === undefined ? v[v.length - 1] : n; }
+    const p = [...v].reverse().find((x) => x < cur - 1e-9);
+    return p === undefined ? 0 : p;
+  }
+  return Math.max(0, round(cur + dir * ex.step));
+}
+
 export const fmtKg = (n) => (n == null ? "–" : String(round(n)).replace(/\.0+$/, ""));
 
 export function openSession(db) {
@@ -49,7 +63,7 @@ export function target(db, item) {
   const allTop = last.sets.length >= item.sets && last.sets.every((s) => s.reps >= item.max);
   if (allTop) {
     if (ex.type === "timed") t.reps = last.top + ex.step;
-    else if (ex.type === "weight" || (last.kg || 0) > 0) { t.kg = (last.kg || 0) + ex.step; t.up = true; t.reps = item.min; }
+    else if (ex.type === "weight" || (last.kg || 0) > 0) { t.kg = stepWeight(ex, last.kg || 0, 1); t.up = true; t.reps = item.min; }
     else t.reps = item.max; // bodyweight with no load: keep at top
   } else {
     t.reps = Math.min(item.max, Math.max(item.min, Math.max(...last.sets.map((s) => s.reps))));
@@ -64,14 +78,14 @@ export function targetText(db, item) {
   const range = `${item.sets} × ${item.min}–${item.max}`;
   if (t.first) return ex.type === "weight" ? `new · ${range}` : `BW · ${range}`;
   if (t.kg == null || t.kg === 0) return `BW · ${range}`;
-  return `${fmtKg(t.kg)} kg · ${range}`;
+  return `${fmtKg(t.kg)} ${unitOf(ex)} · ${range}`;
 }
 
 export function lastText(ex) {
   if (!ex.last) return "Last: –";
   const reps = ex.last.sets.map((s) => s.reps).join(", ");
   if (ex.type === "timed") return `Last: ${reps} s`;
-  const kg = ex.last.kg ? `${fmtKg(ex.last.kg)} kg` : "BW";
+  const kg = ex.last.kg ? `${fmtKg(ex.last.kg)} ${unitOf(ex)}` : "BW";
   return `Last: ${kg} × ${reps}`;
 }
 

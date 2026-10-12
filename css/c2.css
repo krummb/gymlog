@@ -118,3 +118,14 @@ html, body, button, input { touch-action:manipulation; }
   #app { display:none; }
   #rotate { display:flex; position:fixed; inset:0; align-items:center; justify-content:center; text-align:center; padding:24px; font-size:16px; font-weight:bold; background:var(--win); color:var(--txt); }
 }
+
+.scales { display:flex; flex-direction:column; border:1px solid var(--line); }
+.srow { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; min-height:34px; padding:0 8px; border:0; border-bottom:1px solid var(--hair); background:var(--panel); text-align:left; }
+.srow:last-child { border-bottom:0; }
+.srow:nth-child(even) { background:var(--alt); }
+.srow .nm { color:var(--purple); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.srow span:last-child { color:var(--grey); white-space:nowrap; }
+.srow span.has { color:var(--green); font-weight:bold; }
+.win textarea, .win select { width:100%; border:1px solid var(--btnline); background:var(--ctl); color:var(--txt); font:inherit; padding:6px; }
+.win select { width:auto; height:28px; padding:0 6px; }
+.win textarea { font-family:"Courier New", monospace; }
