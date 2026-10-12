@@ -374,10 +374,8 @@ const act = {
   scaledlg: (_, el) => {
     const id = el.dataset.ex, e = db.exercises[id];
     const v = e.scale ? e.scale.values.join("  ") : "";
-    const u = e.scale ? e.scale.unit : "kg";
-    ui.dialog = { title: `Weight scale · ${e.name}`, ok: false, body: `
-      <p class="small">The weights this machine can select, lowest first, separated by spaces. Leave empty to use a fixed step (${L.fmtKg(e.step)} kg).</p>
-      <div class="noterow"><label for="sc_unit">Unit</label><select id="sc_unit"><option value="kg" ${u === "kg" ? "selected" : ""}>kg</option><option value="lb" ${u === "lb" ? "selected" : ""}>lb</option></select></div>
+        ui.dialog = { title: `Weight scale · ${e.name}`, ok: false, body: `
+      <p class="small">The weights this machine can select, lowest first, separated by spaces. All in kg. Leave empty to use a fixed step (${L.fmtKg(e.step)} kg).</p>
       <textarea id="sc_vals" rows="5" placeholder="e.g. 5 10 15 20 25 …">${esc(v)}</textarea>
       <button class="btn primary wide" data-act="savescale" data-ex="${id}">Save</button>
       <button class="btn wide" data-act="close">Cancel</button>` };
@@ -389,7 +387,7 @@ const act = {
     const toks = raw.split(/[;\s]+|,\s+/).filter(Boolean);
     if (toks.some((t) => !/^\d+([.,]\d+)?$/.test(t))) { alert("Use numbers separated by spaces, e.g. 9 14 18 23"); return "norender"; }
     const values = [...new Set(toks.map((t) => parseFloat(t.replace(",", "."))))].sort((a, b) => a - b);
-    e.scale = { unit: $("#sc_unit").value, values };
+    e.scale = { unit: "kg", values };
     persist(); ui.dialog = null;
   },
   close: () => { ui.dialog = null; },
