@@ -1,13 +1,13 @@
 /* Theme C2 "Commander". Layout lives in markup; swapping theme = swapping this file. */
 :root { --win:#F0F0F0; --panel:#FFFFFF; --bar:#3C4048; --path:#D8D8D8; --line:#A0A0A0; --btn:#E1E1E1; --btnline:#ADADAD;
-  --sel:#CCE4F7; --selline:#3A7BD5; --navy:#000080; --green:#007A00; --purple:#6B1FD6; --blue:#0A3EC8; --amber:#8A4B00; --teal:#00797A; --grey:#6B6B6B; }
+  --sel:#CCE4F7; --selline:#3A7BD5; --navy:#000080; --green:#007A00; --purple:#6B1FD6; --blue:#0A3EC8; --amber:#8A4B00; --yellow:#B08800; --teal:#00797A; --grey:#6B6B6B; }
 :root { --alt:#EDEDED; --ctl:#FFFFFF; --note-bg:#FFFBE6; --hair:#C8C8C8; --hair2:#D0D0D0; --txt:#000000; --active-txt:#FF8A8A; --press:#C8C8C8; --ico:#1A1A1A;
   --ic-green:#2E8B2E; --ic-purple:#7A3EC8; --ic-orange:#D07000; --ic-slate:#5B6B8A; --ic-ok:#007A00; --ic-grey:#808080; --ic-page:#3050C8; --ic-page2:#6B1FD6; --ic-disk:#DDE3EE; --rest:#D07000; color-scheme:light; }
 
-@media (prefers-color-scheme: dark) { :root:not([data-mode=light]) { --win:#1E2024; --panel:#14161A; --bar:#0E1013; --path:#2C3038; --line:#4A4F58; --btn:#2E323A; --btnline:#555B66; --sel:#1F3A5C; --selline:#4A8BE0; --navy:#1B2A6B; --green:#5FD35F; --purple:#B48CFF; --blue:#7DA9FF; --amber:#E0A94A; --teal:#4CC9CA; --grey:#9AA1AC;
+@media (prefers-color-scheme: dark) { :root:not([data-mode=light]) { --win:#1E2024; --panel:#14161A; --bar:#0E1013; --path:#2C3038; --line:#4A4F58; --btn:#2E323A; --btnline:#555B66; --sel:#1F3A5C; --selline:#4A8BE0; --navy:#1B2A6B; --green:#5FD35F; --purple:#B48CFF; --blue:#7DA9FF; --amber:#E0A94A; --yellow:#F2D14B; --teal:#4CC9CA; --grey:#9AA1AC;
   --alt:#1A1D22; --ctl:#14161A; --note-bg:#2A2618; --hair:#3A3F48; --hair2:#3A3F48; --txt:#E6E6E6; --active-txt:#FF9A9A; --press:#444A55; --ico:#E6E6E6;
   --ic-green:#5FD35F; --ic-purple:#B48CFF; --ic-orange:#FFB347; --ic-slate:#9AA8C4; --ic-ok:#5FD35F; --ic-grey:#8A9099; --ic-page:#7DA9FF; --ic-page2:#B48CFF; --ic-disk:#3A4252; --rest:#FFB347; color-scheme:dark; } }
-:root[data-mode=dark] { --win:#1E2024; --panel:#14161A; --bar:#0E1013; --path:#2C3038; --line:#4A4F58; --btn:#2E323A; --btnline:#555B66; --sel:#1F3A5C; --selline:#4A8BE0; --navy:#1B2A6B; --green:#5FD35F; --purple:#B48CFF; --blue:#7DA9FF; --amber:#E0A94A; --teal:#4CC9CA; --grey:#9AA1AC;
+:root[data-mode=dark] { --win:#1E2024; --panel:#14161A; --bar:#0E1013; --path:#2C3038; --line:#4A4F58; --btn:#2E323A; --btnline:#555B66; --sel:#1F3A5C; --selline:#4A8BE0; --navy:#1B2A6B; --green:#5FD35F; --purple:#B48CFF; --blue:#7DA9FF; --amber:#E0A94A; --yellow:#F2D14B; --teal:#4CC9CA; --grey:#9AA1AC;
   --alt:#1A1D22; --ctl:#14161A; --note-bg:#2A2618; --hair:#3A3F48; --hair2:#3A3F48; --txt:#E6E6E6; --active-txt:#FF9A9A; --press:#444A55; --ico:#E6E6E6;
   --ic-green:#5FD35F; --ic-purple:#B48CFF; --ic-orange:#FFB347; --ic-slate:#9AA8C4; --ic-ok:#5FD35F; --ic-grey:#8A9099; --ic-page:#7DA9FF; --ic-page2:#B48CFF; --ic-disk:#3A4252; --rest:#FFB347; color-scheme:dark; }
 
@@ -124,7 +124,10 @@ html, body, button, input { touch-action:manipulation; }
 .srow:last-child { border-bottom:0; }
 .srow:nth-child(even) { background:var(--alt); }
 .srow .nm { color:var(--purple); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.srow span:last-child { color:var(--grey); white-space:nowrap; }
+.srow .rt { white-space:nowrap; color:var(--grey); }
+.srow .m-wt { color:var(--green); font-weight:bold; }
+.srow .m-step { color:var(--yellow); }
+.srow .m-scale { color:var(--blue); }
 .win textarea, .win select { width:100%; border:1px solid var(--btnline); background:var(--ctl); color:var(--txt); font:inherit; padding:6px; }
 .win select { width:auto; height:28px; padding:0 6px; }
 .win textarea { font-family:"Courier New", monospace; }
