@@ -265,7 +265,7 @@ function settings() {
     <p class="small">Tap one to change its name, step, current weight or weight scale.</p>
     <div class="scales">${Object.entries(db.exercises).map(([id, e]) => {
       const step = e.type === "timed" ? `step ${L.fmtKg(e.step)} s` : e.scale && e.scale.values.length ? "scale" : `step ${L.fmtKg(e.step)} kg`;
-      return `<button class="srow" data-act="exdlg" data-ex="${id}"><span class="nm">${esc(e.name)}</span><span class="${e.scale ? "has" : ""}">${esc(L.currentText(e))} · ${esc(step)}</span></button>`;
+      return `<button class="srow" data-act="exdlg" data-ex="${id}"><span class="nm">${esc(e.name)}</span><span>${esc(L.currentText(e))} · ${esc(step)}</span></button>`;
     }).join("")}</div>
     <button class="btn" data-act="exdlg" data-ex="">+ Add exercise…</button>
     <div class="setlabel">Backup</div>
