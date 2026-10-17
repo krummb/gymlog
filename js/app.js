@@ -181,7 +181,7 @@ function detail() {
   const finished = st.status === "done" || st.status === "skipped";
 
   const tgt = timed
-    ? `Today: ${item.sets} × ${t.reps} s (range ${item.min}–${item.max})`
+    ? (t.first ? `First time: start at ${t.reps} s` : `Today: ${item.sets} × ${t.reps} s ↑`)
     : t.first
       ? `First time: pick a weight that leaves 3–4 reps in reserve`
       : `Today: ${t.kg ? L.fmtKg(t.kg) + " " + L.unitOf(ex) : "BW"} · ${item.sets} × ${item.min}–${item.max}${t.up ? " ↑" : ""}`;
@@ -196,7 +196,7 @@ function detail() {
 
   const kgVal = d.kg == null || d.kg === 0 ? (ex.type === "weight" ? "0" : "BW") : L.fmtKg(d.kg);
   const hint = timed
-    ? `All sets at ${item.max} s → +${ex.step} s next time`
+    ? `Next time: beat your best by +${ex.step} s`
     : `${item.sets > 1 ? "All sets" : "Set"} at ${item.max} reps → ${ex.scale ? "next weight on the stack" : "+" + L.fmtKg(ex.step) + " " + L.unitOf(ex)} next time`;
 
   return `
@@ -241,17 +241,19 @@ function programs() {
     const w = db.workouts[l];
     return `<div class="panel">
       <div class="pathbar">▾ gym:\\${l} · ${esc(w.name)}</div>
-      <div class="thead prog"><span>Exercise</span><span>Sets</span><span>Reps</span><span>Step</span></div>
+      <div class="thead prog"><span>Exercise</span><span>Sets</span><span>Reps</span><span>Step</span><span></span></div>
       ${w.items.map((it, i) => {
         const ex = db.exercises[it.ex];
+        const timed = ex.type === "timed";
         return `<div class="prow ${i % 2 ? "" : "alt"}"><span class="nm">${esc(ex.name)}</span>
           <span class="mini"><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="-1" aria-label="Fewer sets">−</button><b>${it.sets}</b><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="1" aria-label="More sets">+</button></span>
-          <span>${it.min}–${it.max}${ex.type === "timed" ? "s" : ""}</span>
-          <span>${ex.scale ? `<button class="btn stepbtn" data-act="scaledlg" data-ex="${it.ex}">scale</button>` : `<button class="btn stepbtn" data-act="pstep" data-ex="${it.ex}">${L.fmtKg(ex.step)}${ex.type === "timed" ? "s" : ""}</button>`}</span></div>`;
+          <span><button class="btn stepbtn" data-act="prange" data-l="${l}" data-i="${i}" aria-label="Edit reps">${timed ? it.min + "s+" : it.min + "–" + it.max}</button></span>
+          <span>${ex.scale ? `<button class="btn stepbtn" data-act="exdlg" data-ex="${it.ex}">scale</button>` : `<button class="btn stepbtn" data-act="pstep" data-ex="${it.ex}">${L.fmtKg(ex.step)}${timed ? "s" : ""}</button>`}</span>
+          <span><button class="btn stepbtn xbtn" data-act="premove" data-l="${l}" data-i="${i}" aria-label="Remove ${esc(ex.name)} from workout ${l}">×</button></span></div>`;
       }).join("")}
-      <div class="status"><button class="btn" data-act="allsets" data-l="${l}">All to 3 sets</button></div>
+      <div class="status"><button class="btn" data-act="allsets" data-l="${l}">All to 3 sets</button> <button class="btn" data-act="padd" data-l="${l}">+ Add exercise</button></div>
     </div>`;
-  }).join("") + `<p class="small">Tap a step size to change it (one machine notch), or “scale” for machines with a weight stack. Sets per exercise: − / +.</p>`;
+  }).join("") + `<p class="small">Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises (plank) have no range: “20s+” is the starting time, then the target is your last best + the step.</p>`;
 }
 
 function settings() {
@@ -259,13 +261,13 @@ function settings() {
     <div class="noterow"><label for="rest">Rest (s)</label><input id="rest" type="number" inputmode="numeric" value="${db.settings.restSec}"></div>
     <div class="setlabel">Appearance</div>
     <div class="seg">${MODES.map((m) => `<button class="btn ${(db.settings.mode || "auto") === m ? "primary" : ""}" data-act="mode" data-v="${m}">${m[0].toUpperCase() + m.slice(1)}</button>`).join("")}</div>
-    <div class="setlabel">Weight scales</div>
-    <p class="small">Machines with a weight stack step through their own list of weights, not a fixed step.</p>
-    <div class="scales">${Object.entries(db.exercises).filter(([, e]) => e.type !== "timed").map(([id, e]) => {
-      const v = e.scale && e.scale.values;
-      const sum = v && v.length ? `${v.slice(0, 3).join(" · ")} … ${v[v.length - 1]} ${e.scale.unit}` : `step ${L.fmtKg(e.step)} kg`;
-      return `<button class="srow" data-act="scaledlg" data-ex="${id}"><span class="nm">${esc(e.name)}</span><span class="${v ? "has" : ""}">${esc(sum)}</span></button>`;
+    <div class="setlabel">Exercises</div>
+    <p class="small">Tap one to change its name, step, current weight or weight scale.</p>
+    <div class="scales">${Object.entries(db.exercises).map(([id, e]) => {
+      const step = e.type === "timed" ? `step ${L.fmtKg(e.step)} s` : e.scale && e.scale.values.length ? "scale" : `step ${L.fmtKg(e.step)} kg`;
+      return `<button class="srow" data-act="exdlg" data-ex="${id}"><span class="nm">${esc(e.name)}</span><span class="${e.scale ? "has" : ""}">${esc(L.currentText(e))} · ${esc(step)}</span></button>`;
     }).join("")}</div>
+    <button class="btn" data-act="exdlg" data-ex="">+ Add exercise…</button>
     <div class="setlabel">Backup</div>
     <p class="small">Data lives on this phone until we switch to Firestore. Export now and then to be safe.</p>
     <button class="btn" data-act="export">Export backup (.json)</button>
@@ -371,24 +373,115 @@ const act = {
     ui.dialog = { title: ex.name, body: `<div class="guideimg">Illustration coming</div><p>${esc(ex.cue)}</p>${ex.note ? `<p class="notecol">Note: ${esc(ex.note)}</p>` : ""}` };
   },
   mode: (v) => { db.settings.mode = v; persist(); applyMode(); },
-  scaledlg: (_, el) => {
-    const id = el.dataset.ex, e = db.exercises[id];
-    const v = e.scale ? e.scale.values.join("  ") : "";
-        ui.dialog = { title: `Weight scale · ${e.name}`, ok: false, body: `
-      <p class="small">The weights this machine can select, lowest first, separated by spaces. All in kg. Leave empty to use a fixed step (${L.fmtKg(e.step)} kg).</p>
-      <textarea id="sc_vals" rows="5" placeholder="e.g. 5 10 15 20 25 …">${esc(v)}</textarea>
-      <button class="btn primary wide" data-act="savescale" data-ex="${id}">Save</button>
-      <button class="btn wide" data-act="close">Cancel</button>` };
+  exdlg: (_, el) => {
+    const id = el.dataset.ex;
+    const isNew = !id;
+    const e = isNew ? { name: "", type: "weight", step: 2.5, cue: "", last: null, scale: null } : db.exercises[id];
+    const timed = e.type === "timed";
+    const cur = e.last ? (timed ? e.last.top : e.last.kg) : "";
+    const letters = L.LETTERS.map((l) => `<label><input type="checkbox" class="ex_in" value="${l}"> ${l}</label>`).join("");
+    ui.dialog = { title: isNew ? "Add exercise" : e.name, ok: false, body: `
+      <div class="frow"><label for="ex_name">Name</label><input id="ex_name" type="text" value="${esc(e.name)}" placeholder="e.g. Cable fly"></div>
+      ${isNew ? `<div class="frow"><label for="ex_type">Type</label><select id="ex_type" data-act="extype"><option value="weight">Weight (machine / free)</option><option value="bodyweight">Bodyweight (reps)</option><option value="timed">Timed (seconds)</option></select></div>` : ""}
+      <div class="frow"><label for="ex_cur">${timed ? "Current best (s)" : "Current weight (kg)"}</label><input id="ex_cur" type="text" inputmode="decimal" value="${cur === null ? "" : esc(cur)}" placeholder="${timed ? "e.g. 30" : "e.g. 25"}"></div>
+      <p class="small">Today's target starts from this. Changing it starts the rep count over at the low end.</p>
+      <div class="frow"><label for="ex_step">Step (${timed ? "s" : "kg"})</label><input id="ex_step" type="text" inputmode="decimal" value="${esc(e.step)}"></div>
+      <div id="ex_scalebox" ${timed ? "hidden" : ""}>
+        <label class="lbl" for="sc_vals">Weight scale (kg, optional)</label>
+        <textarea id="sc_vals" rows="3" placeholder="Weights the machine can select, lowest first, separated by spaces. Empty = fixed step.">${esc(e.scale ? e.scale.values.join("  ") : "")}</textarea>
+      </div>
+      <div class="frow"><label for="ex_cue">Form cue</label><input id="ex_cue" type="text" value="${esc(e.cue)}" placeholder="one line, optional"></div>
+      ${isNew ? `<div class="frow"><label for="ex_range" id="ex_range_lbl">Reps</label><input id="ex_range" type="text" value="8-12" placeholder="8-12"></div>
+      <div class="lbl">Add to workout</div><div class="checks">${letters}</div>` : ""}
+      <button class="btn primary wide" data-act="exsave" data-ex="${esc(id)}">Save</button>
+      <button class="btn wide" data-act="close">Cancel</button>
+      ${!isNew && e.custom ? `<button class="btn wide" data-act="exdel" data-ex="${esc(id)}">Delete this exercise</button>` : ""}` };
   },
-  savescale: (_, el) => {
-    const e = db.exercises[el.dataset.ex];
+  extype: () => "norender",
+  exsave: (_, el) => {
+    const id = el.dataset.ex;
+    const isNew = !id;
+    const num = (v) => { const n = parseFloat(String(v).replace(",", ".")); return Number.isFinite(n) ? n : null; };
+    const name = $("#ex_name").value.trim();
+    if (!name) { alert("Give the exercise a name."); return "norender"; }
+    const step = num($("#ex_step").value);
+    if (!(step > 0)) { alert("Step must be a number above 0."); return "norender"; }
+    const type = isNew ? $("#ex_type").value : db.exercises[id].type;
+    let scale = null;
     const raw = ($("#sc_vals").value || "").trim();
-    if (!raw) { e.scale = null; persist(); ui.dialog = null; return; }
-    const toks = raw.split(/[;\s]+|,\s+/).filter(Boolean);
-    if (toks.some((t) => !/^\d+([.,]\d+)?$/.test(t))) { alert("Use numbers separated by spaces, e.g. 9 14 18 23"); return "norender"; }
-    const values = [...new Set(toks.map((t) => parseFloat(t.replace(",", "."))))].sort((a, b) => a - b);
-    e.scale = { unit: "kg", values };
+    if (raw && type !== "timed") {
+      const toks = raw.split(/[;\s]+|,\s+/).filter(Boolean);
+      if (toks.some((t) => !/^\d+([.,]\d+)?$/.test(t))) { alert("Weight scale: use numbers separated by spaces, e.g. 9 14 18 23"); return "norender"; }
+      scale = { unit: "kg", values: [...new Set(toks.map((t) => parseFloat(t.replace(",", "."))))].sort((a, b) => a - b) };
+    }
+    const curRaw = $("#ex_cur").value.trim();
+    const cur = curRaw === "" ? null : num(curRaw);
+    if (curRaw !== "" && cur === null) { alert("Current weight must be a number."); return "norender"; }
+    let e, exId = id;
+    if (isNew) {
+      const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "exercise";
+      exId = base; for (let n = 2; db.exercises[exId]; n++) exId = base + "_" + n;
+      e = db.exercises[exId] = { name, type, step, cue: "", note: "", last: null, scale: null, custom: true };
+    } else e = db.exercises[id];
+    e.name = name; e.step = step; e.cue = $("#ex_cue").value.trim(); e.scale = scale;
+    if (cur !== null) {
+      const before = e.last ? (e.type === "timed" ? e.last.top : e.last.kg) : null;
+      if (cur !== before) L.setCurrent(e, cur);
+    }
+    if (isNew) {
+      const rng = $("#ex_range").value.match(/(\d+)\s*[-–]?\s*(\d+)?/);
+      const min = rng ? +rng[1] : (type === "timed" ? 20 : 8), max = rng && rng[2] ? +rng[2] : (type === "timed" ? min : Math.max(min, 12));
+      for (const c of document.querySelectorAll(".ex_in:checked")) {
+        const w = db.workouts[c.value];
+        w.items.push({ ex: exId, sets: w.items[0] ? w.items[0].sets : 1, min, max });
+      }
+    }
     persist(); ui.dialog = null;
+  },
+  exdel: (_, el) => {
+    const id = el.dataset.ex;
+    ui.dialog = { title: `Delete ${db.exercises[id].name}?`, ok: false, body: `<p>It will be removed from every workout. Past results stay in the saved data.</p>
+      <button class="btn primary wide" data-act="exdelnow" data-ex="${esc(id)}">Delete</button><button class="btn wide" data-act="close">Cancel</button>` };
+  },
+  exdelnow: (_, el) => {
+    const id = el.dataset.ex;
+    for (const w of Object.values(db.workouts)) w.items = w.items.filter((i) => i.ex !== id);
+    delete db.exercises[id]; if (ui.active === id) setActive(null);
+    persist(); ui.dialog = null;
+  },
+  padd: (_, el) => {
+    const l = el.dataset.l, w = db.workouts[l];
+    const opts = Object.entries(db.exercises).filter(([id]) => !w.items.some((i) => i.ex === id))
+      .map(([id, e]) => `<button class="btn wide" data-act="paddnow" data-l="${l}" data-ex="${id}">${esc(e.name)}</button>`).join("");
+    ui.dialog = { title: `Add to workout ${l}`, ok: false, body: `${opts || "<p>All exercises are already in this workout.</p>"}<button class="btn wide" data-act="close">Cancel</button><p class="small">New exercises are created in Settings → Exercises.</p>` };
+  },
+  paddnow: (_, el) => {
+    const w = db.workouts[el.dataset.l], id = el.dataset.ex, e = db.exercises[id];
+    let ref = null;
+    for (const x of Object.values(db.workouts)) { const f = x.items.find((i) => i.ex === id); if (f) { ref = f; break; } }
+    const min = ref ? ref.min : e.type === "timed" ? 20 : e.type === "bodyweight" ? 10 : 8;
+    const max = ref ? ref.max : e.type === "timed" ? min : e.type === "bodyweight" ? 12 : 10;
+    w.items.push({ ex: id, sets: w.items[0] ? w.items[0].sets : 1, min, max });
+    persist(); ui.dialog = null;
+  },
+  premove: (_, el) => {
+    const l = el.dataset.l, i = +el.dataset.i, it = db.workouts[l].items[i];
+    ui.dialog = { title: `Remove ${db.exercises[it.ex].name}?`, ok: false, body: `<p>Takes it out of workout ${l} only. Its saved results are kept.</p>
+      <button class="btn primary wide" data-act="premovenow" data-l="${l}" data-i="${i}">Remove</button><button class="btn wide" data-act="close">Cancel</button>` };
+  },
+  premovenow: (_, el) => { db.workouts[el.dataset.l].items.splice(+el.dataset.i, 1); persist(); ui.dialog = null; },
+  prange: (_, el) => {
+    const it = db.workouts[el.dataset.l].items[+el.dataset.i], ex = db.exercises[it.ex];
+    if (ex.type === "timed") {
+      const v = prompt(`Starting time for ${ex.name} (seconds). After that the target is your last best + ${ex.step} s.`, it.min);
+      const n = parseInt(v, 10);
+      if (v != null && n > 0) { it.min = n; it.max = n; persist(); }
+      return;
+    }
+    const v = prompt(`Rep range for ${ex.name} (min-max)`, `${it.min}-${it.max}`);
+    const m = v && v.match(/^\s*(\d+)\s*[-–]\s*(\d+)\s*$/);
+    if (v != null && m && +m[1] > 0 && +m[2] >= +m[1]) { it.min = +m[1]; it.max = +m[2]; persist(); }
+    else if (v != null) alert("Use the form 8-10.");
   },
   close: () => { ui.dialog = null; },
   noop: () => "norender",
@@ -397,8 +490,15 @@ const act = {
   finish: () => {
     const s = session(); if (!s) return;
     const w = workout();
-    const open = w.items.filter((it) => !["done", "skipped"].includes(L.itemState(s, it).status)).length;
-    if (open && !confirm(`${open} exercise(s) not done. Finish anyway?`)) return;
+    const st = w.items.map((it) => L.itemState(s, it).status);
+    const done = st.filter((x) => x === "done").length, skipped = st.filter((x) => x === "skipped").length, open = st.length - done - skipped;
+    const parts = [`${done} of ${st.length} exercises done`]; if (skipped) parts.push(`${skipped} skipped`); if (open) parts.push(`${open} not done`);
+    ui.dialog = { title: `Finish workout ${ui.letter}?`, ok: false, body: `<p>${parts.join(", ")}.</p>
+      <p class="small">Your results are saved and become the starting point for next time.</p>
+      <button class="btn primary wide" data-act="finishnow">Finish workout</button><button class="btn wide" data-act="close">Keep going</button>` };
+  },
+  finishnow: () => {
+    const s = session(); if (!s) { ui.dialog = null; return; }
     L.finishSession(db, s); persist();
     ui.letter = L.nextLetter(db); setActive(null); ui.restEnd = null;
     ui.dialog = { title: "Workout logged", body: `<p>Nice. Next time: workout ${ui.letter} · ${esc(workout().name)}.</p>`, ok: true };
@@ -443,6 +543,14 @@ document.addEventListener("click", (e) => {
 
 document.addEventListener("change", (e) => {
   const t = e.target;
+  if (t.id === "ex_type") {
+    const timed = t.value === "timed";
+    $("#ex_scalebox").hidden = timed;
+    document.querySelector('label[for="ex_cur"]').textContent = timed ? "Current best (s)" : "Current weight (kg)";
+    document.querySelector('label[for="ex_step"]').textContent = timed ? "Step (s)" : "Step (kg)";
+    $("#ex_step").value = timed ? 5 : 2.5; $("#ex_range").value = timed ? "20" : "8-12";
+    document.getElementById("ex_range_lbl").textContent = timed ? "Start (s)" : "Reps";
+  }
   if (t.id === "xnote") { db.exercises[t.dataset.ex].note = t.value; persist(); }
   if (t.id === "gnote") { db.settings.globalNote = t.value; persist(); }
   if (t.id === "rest") { const n = parseInt(t.value, 10); if (n > 0) { db.settings.restSec = n; persist(); } }

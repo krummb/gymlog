@@ -53,7 +53,8 @@ export function target(db, item) {
   const ex = db.exercises[item.ex];
   const last = ex.last;
   const t = { kg: null, reps: item.max, sets: item.sets, up: false, first: !last };
-  if (ex.type === "timed") { t.reps = last ? last.top : item.min; }
+  // Timed (plank): no fixed range. First time start at item.min, afterwards beat your best by one step.
+  if (ex.type === "timed") { t.reps = last ? last.top + ex.step : item.min; t.dyn = true; return t; }
   if (!last) {
     t.kg = ex.type === "weight" ? 0 : null;
     if (ex.type !== "timed") t.reps = item.min;
@@ -74,7 +75,7 @@ export function target(db, item) {
 export function targetText(db, item) {
   const ex = db.exercises[item.ex];
   const t = target(db, item);
-  if (ex.type === "timed") return `${item.sets} × ${item.min}–${item.max} s`;
+  if (ex.type === "timed") return `${item.sets} × ${t.reps} s`;
   const range = `${item.sets} × ${item.min}–${item.max}`;
   if (t.first) return ex.type === "weight" ? `new · ${range}` : `BW · ${range}`;
   if (t.kg == null || t.kg === 0) return `BW · ${range}`;
@@ -83,6 +84,7 @@ export function targetText(db, item) {
 
 export function lastText(ex) {
   if (!ex.last) return "Last: –";
+  if (ex.last.baseline) return ex.type === "timed" ? `Start: ${ex.last.top} s` : `Start: ${ex.last.kg ? fmtKg(ex.last.kg) + " " + unitOf(ex) : "BW"}`;
   const reps = ex.last.sets.map((s) => s.reps).join(", ");
   if (ex.type === "timed") return `Last: ${reps} s`;
   const kg = ex.last.kg ? `${fmtKg(ex.last.kg)} ${unitOf(ex)}` : "BW";
@@ -120,4 +122,17 @@ export function finishSession(db, session) {
     const kg = e.sets[e.sets.length - 1].kg;
     ex.last = { date: session.finishedAt, kg, sets: e.sets.map((s) => ({ kg: s.kg, reps: s.reps })), top: Math.max(...e.sets.map((s) => s.reps)) };
   }
+}
+
+// Set the "current weight" by hand (typed in Settings). Today's target starts from it.
+export function setCurrent(ex, value) {
+  const date = new Date().toISOString();
+  if (ex.type === "timed") ex.last = { date, kg: null, sets: [{ kg: null, reps: value }], top: value, baseline: true };
+  else ex.last = { date, kg: value, sets: [{ kg: value, reps: 0 }], top: 0, baseline: true };
+}
+
+export function currentText(ex) {
+  if (!ex.last) return "–";
+  if (ex.type === "timed") return ex.last.top + " s";
+  return ex.last.kg ? fmtKg(ex.last.kg) + " " + unitOf(ex) : "BW";
 }
