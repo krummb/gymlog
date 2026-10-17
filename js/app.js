@@ -126,7 +126,7 @@ function today() {
     let cls = "todo", ic = I.page("var(--ic-page2)"), info = L.targetText(db, it).replace(/ · /, " · ");
     if (st.status === "done") {
       cls = "done"; ic = I.check;
-      info = ex.type === "timed" ? st.sets.map((x) => x.reps + "s").join(",") : `${st.sets[st.sets.length - 1].kg ? L.fmtKg(st.sets[st.sets.length - 1].kg) + " " + L.unitOf(ex) : "BW"} × ${st.sets.map((x) => x.reps).join(",")}`;
+      info = L.setsSummary(ex, st.sets, false);
     } else if (st.status === "skipped") { cls = "skipped"; ic = I.skip; info = "skipped"; }
     if (isActive) { cls += " active"; if (st.status === "todo") ic = I.cur; }
     rows.push(`<button class="row ${cls} ${i % 2 ? "" : "alt"}" data-act="pick" data-v="${it.ex}">

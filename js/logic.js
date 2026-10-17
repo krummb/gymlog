@@ -82,13 +82,18 @@ export function targetText(db, item) {
   return `${fmtKg(t.kg)} ${unitOf(ex)} · ${range}`;
 }
 
+// "64 kg × 12, 12" when every set used the same weight, "55×12 · 64×12" when the weight changed between sets
+export function setsSummary(ex, sets, withUnit = true) {
+  if (ex.type === "timed") return sets.map((x) => x.reps).join(", ") + " s";
+  const kgs = sets.map((x) => x.kg || 0);
+  if (kgs.every((k) => k === kgs[0])) return `${kgs[0] ? fmtKg(kgs[0]) + (withUnit ? " " + unitOf(ex) : "") : "BW"} × ${sets.map((x) => x.reps).join(", ")}`;
+  return sets.map((x) => `${fmtKg(x.kg || 0)}×${x.reps}`).join(" · ") + (withUnit ? " " + unitOf(ex) : "");
+}
+
 export function lastText(ex) {
   if (!ex.last) return "Last: –";
   if (ex.last.baseline) return ex.type === "timed" ? `Start: ${ex.last.top} s` : `Start: ${ex.last.kg ? fmtKg(ex.last.kg) + " " + unitOf(ex) : "BW"}`;
-  const reps = ex.last.sets.map((s) => s.reps).join(", ");
-  if (ex.type === "timed") return `Last: ${reps} s`;
-  const kg = ex.last.kg ? `${fmtKg(ex.last.kg)} ${unitOf(ex)}` : "BW";
-  return `Last: ${kg} × ${reps}`;
+  return `Last: ${setsSummary(ex, ex.last.sets)}`;
 }
 
 export function newSession(db, letter) {
