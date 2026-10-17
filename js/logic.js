@@ -61,7 +61,9 @@ export function target(db, item) {
     return t;
   }
   t.kg = last.kg;
-  const allTop = last.sets.length >= item.sets && last.sets.every((s) => s.reps >= item.max);
+  // Only step up when every set used the same weight (a ramp like 55 then 64 repeats the heavier weight first)
+  const sameKg = last.sets.every((s) => (s.kg || 0) === (last.sets[0].kg || 0));
+  const allTop = sameKg && last.sets.length >= item.sets && last.sets.every((s) => s.reps >= item.max);
   if (allTop) {
     if (ex.type === "timed") t.reps = last.top + ex.step;
     else if (ex.type === "weight" || (last.kg || 0) > 0) { t.kg = stepWeight(ex, last.kg || 0, 1); t.up = true; t.reps = item.min; }
