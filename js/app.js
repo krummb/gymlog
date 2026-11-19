@@ -280,7 +280,7 @@ function programs() {
       ${w.items.map((it, i) => {
         const ex = db.exercises[it.ex];
         const timed = ex.type === "timed";
-        return `<div class="prow ${i % 2 ? "" : "alt"}"><span class="nm">${esc(ex.name)}${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}</span>
+        return `<div class="prow ${i % 2 ? "" : "alt"}"><span class="nmcell"><span class="nm">${esc(ex.name)}${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}</span><button class="restbtn ${ex.rest ? "custom" : ""}" data-act="prest" data-ex="${it.ex}" aria-label="Rest time for ${esc(ex.name)}">rest ${fmtRest(L.restFor(db, ex))}${ex.rest ? "" : " (default)"}</button></span>
           <span class="mini"><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="-1" aria-label="Fewer sets">−</button><b>${it.sets}</b><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="1" aria-label="More sets">+</button></span>
           <span><button class="btn stepbtn" data-act="prange" data-l="${l}" data-i="${i}" aria-label="Edit reps">${timed ? it.min + (ex.fixed ? "s" : "s+") : it.min === it.max ? it.min : it.min + "–" + it.max}</button></span>
           <span>${ex.scale ? `<button class="btn stepbtn" data-act="exdlg" data-ex="${it.ex}">scale</button>` : `<button class="btn stepbtn" data-act="pstep" data-ex="${it.ex}">${L.fmtKg(ex.step)}${timed ? "s" : ""}</button>`}</span>
@@ -288,7 +288,7 @@ function programs() {
       }).join("")}
       <div class="status"><button class="btn" data-act="allsets" data-l="${l}">All to 3 sets</button> <button class="btn" data-act="padd" data-l="${l}">+ Add exercise</button></div>
     </div>`;
-  }).join("") + `<p class="small">Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises: “60s” is a fixed hold time (plank); “20s+” is a starting time, then the target is your last best + the step. SS = superset with the next row.</p>`;
+  }).join("") + `<p class="small">Tap “rest” under a name to set the rest time for that exercise (it applies wherever the exercise is used; default is set in Settings). Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises: “60s” is a fixed hold time (plank); “20s+” is a starting time, then the target is your last best + the step. SS = superset with the next row.</p>`;
 }
 
 function settings() {
@@ -527,6 +527,16 @@ const act = {
       <button class="btn primary wide" data-act="premovenow" data-l="${l}" data-i="${i}">Remove</button><button class="btn wide" data-act="close">Cancel</button>` };
   },
   premovenow: (_, el) => { db.workouts[el.dataset.l].items.splice(+el.dataset.i, 1); persist(); ui.dialog = null; },
+  prest: (_, el) => {
+    const ex = db.exercises[el.dataset.ex];
+    const v = prompt(`Rest after each set of ${ex.name}: seconds or m:ss (e.g. 90 or 2:30). Leave empty for the default ${fmtRest(db.settings.restSec)}.`, ex.rest ? fmtRest(ex.rest) : "");
+    if (v == null) return;
+    if (v.trim() === "") { delete ex.rest; persist(); return; }
+    const m = v.trim().match(/^(?:(\d+):(\d{1,2})|(\d+))$/);
+    const sec = m ? (m[3] != null ? +m[3] : +m[1] * 60 + +m[2]) : 0;
+    if (sec >= 10 && sec <= 900) { ex.rest = sec; persist(); }
+    else alert("Use seconds (90) or minutes:seconds (1:30), between 10 s and 15 min.");
+  },
   prange: (_, el) => {
     const it = db.workouts[el.dataset.l].items[+el.dataset.i], ex = db.exercises[it.ex];
     if (ex.type === "timed") {
