@@ -155,3 +155,11 @@ html, body, button, input { touch-action:manipulation; }
 .gsteps { margin:0; padding-left:20px; }
 .gsteps li { margin:3px 0; }
 .gbad { margin:0; color:var(--amber); }
+
+/* Reach zone: controls on top. Navigator bar above the logging box */
+.exhead { display:flex; align-items:center; gap:4px; background:var(--path); padding:2px; border-bottom:1px solid var(--line); }
+.exname { flex:1; min-width:0; text-align:center; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.exname small { font-weight:normal; color:var(--grey); margin-left:8px; }
+.btn.nav { width:44px; height:40px; padding:0; font-size:16px; flex:none; }
+.detail .fkeys { margin-top:2px; }
+.img img[hidden], .gimgs img[hidden] { display:none; }

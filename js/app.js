@@ -143,7 +143,13 @@ function today() {
   });
 
   const allClosed = doneCount === w.items.length;
+  const fin = allClosed || s ? `<button class="btn finish ${allClosed ? "primary" : ""}" data-act="finish">${allClosed ? "Finish workout " + ui.letter : "Finish workout early"}</button>` : "";
+  const dt = ui.active === WARM ? warmDetail() : ui.active ? detail() : { top: "", info: "" };
+  // Phone sits in a pouch, only the top ~4/7 of the screen is reachable: controls first, reading next, the list last.
   return `
+    ${dt.top}
+    ${allClosed ? fin : ""}
+    ${dt.info}
     <div class="drives">${drives}</div>
     <div class="pathbar">▾ <span>gym:\\${esc(w.name.replace(/\s+/g, ""))}\\*.*</span><span class="right">${L.sessionCountFor(db, ui.letter)} ${L.sessionCountFor(db, ui.letter) === 1 ? "session" : "sessions"} logged</span></div>
     <div class="panel">
@@ -151,8 +157,24 @@ function today() {
       ${rows.join("")}
       <div class="status">${doneCount} / ${w.items.length} exercises done${s ? "" : " · not started"}</div>
     </div>
-    ${ui.active === WARM ? warmDetail() : ui.active ? detail() : ""}
-    ${allClosed || s ? `<button class="btn finish ${allClosed ? "primary" : ""}" data-act="finish">${allClosed ? "Finish workout " + ui.letter : "Finish workout early"}</button>` : ""}`;
+    ${allClosed ? "" : fin}`;
+}
+
+function exhead(title, sub) {
+  return `<div class="exhead">
+    <button class="btn nav" data-act="nav" data-v="-1" aria-label="Previous exercise">◂</button>
+    <div class="exname">${title}${sub ? `<small>${sub}</small>` : ""}</div>
+    <button class="btn nav" data-act="nav" data-v="1" aria-label="Next exercise">▸</button></div>`;
+}
+
+function fkeys() {
+  return `<div class="fkeys">
+      <button class="btn" data-act="guide">F3 Guide</button>
+      <button class="btn" data-act="focusnote">F4 Note</button>
+      <button class="btn" data-act="rest">F5 Timer</button>
+      <button class="btn" data-act="swap">F6 Swap</button>
+      <button class="btn" data-act="skip">F8 Skip</button>
+    </div>`;
 }
 
 const WARM = "__warm";
@@ -163,9 +185,9 @@ function warmDetail() {
   const running = !!s?.warmStart;
   const done = !!s?.warmup;
   const elapsed = running ? Math.floor((Date.now() - Date.parse(s.warmStart)) / 1000) : done ? s.warmSec || 0 : 0;
-  return `
+  const top = `
     <div class="panel">
-      <div class="pathbar">▾ gym:\\${esc(ui.letter)}\\Warm-up\\timer</div>
+      ${exhead("Warm-up", done ? "done" : running ? "running" : "")}
       <div class="detail">
         <div class="warmclock ${elapsed >= 300 ? "reached" : ""}" id="warmclock">${fmtClock(elapsed)}</div>
         <div class="last">${done ? (s.warmSec ? "Warm-up done · " + fmtClock(s.warmSec) + (s.warmAt ? " · started " + new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "") : "Warm-up done") : running && s.warmAt ? "Started " + new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + " · target 5–10 min" : "Target 5–10 min · easy walk or bike, enough to feel warm"}</div>
@@ -173,8 +195,10 @@ function warmDetail() {
           : running ? `<button class="btn primary log" data-act="warmstop">Stop · warm-up done</button>`
           : `<button class="btn primary log" data-act="warmstart">Start warm-up</button><button class="btn" data-act="warmdone">Mark done (no timer)</button>`}
         ${elapsed >= 300 && running ? `<div class="hint">5 min reached. Stop whenever you feel warm.</div>` : ""}
+        ${fkeys()}
       </div>
     </div>`;
+  return { top, info: "" };
 }
 
 function detail() {
@@ -212,27 +236,33 @@ function detail() {
       ? `Top of the range on every set (${item.max}) → add reps, weight or a new range yourself.`
       : `${item.sets > 1 ? "All sets" : "Set"} at ${item.max}${ex.repUnit ? " " + ex.repUnit : " reps"} → ${ex.scale ? "next weight on the stack" : "+" + L.fmtKg(ex.step) + " " + L.unitOf(ex)} next time`;
 
-  return `
+  const top = `
     <div class="panel">
-      <div class="pathbar">▾ gym:\\${esc(ui.letter)}\\${esc(ex.name)}\\sets</div>
+      ${exhead(esc(ex.name), st.status === "skipped" ? "skipped" : finished ? "done" : `Set ${setNo} of ${item.sets}`)}
       <div class="detail">
-        <div class="dhead">
-          <button class="img gwrap" data-act="guide" aria-label="Open position guide"><span class="ph">IMG<br>guide</span><img class="gimg" src="img/${item.ex}-1.jpg" alt="" hidden></button>
-          <div class="dinfo"><div class="tgt">${esc(tgt)}</div><div class="last">${esc(L.lastText(ex))}</div><div class="cue">${esc(ex.cue)}</div></div>
-        </div>
-        <div class="noterow"><label for="xnote">Note</label><input id="xnote" data-ex="${item.ex}" value="${esc(ex.note)}" placeholder="seat height, notch, how it felt…"></div>
-        ${logged}
         ${finished ? `<button class="btn" data-act="undo">Undo last</button>` : `
-          <div class="setlabel">Set ${setNo} of ${item.sets}</div>
           <div class="steppers">
             ${timed && !ex.fixed ? "" : stepper("kg", "weight", kgVal, "var(--blue)", ex.scale ? `${L.unitOf(ex).toUpperCase()} · machine scale` : `${L.unitOf(ex).toUpperCase()}${ex.per === "hand" ? " · per hand" : ""} · step ${L.fmtKg(timed ? ex.wstep || 2.5 : ex.step)}`)}
             ${stepper("reps", timed ? "seconds" : L.repCap(ex).toLowerCase(), d.reps, "var(--green)", L.repCap(ex))}
           </div>
           <button class="btn primary log" data-act="log">Log set ${setNo} · then rest ${fmtRest(L.restFor(db, ex))}</button>
           ${st.sets.length ? `<button class="btn" data-act="undo">Undo last</button>` : ""}`}
+        ${fkeys()}
+      </div>
+    </div>`;
+  const info = `
+    <div class="panel">
+      <div class="detail">
+        <div class="dhead">
+          <button class="img gwrap" data-act="guide" aria-label="Open position guide"><span class="ph">IMG<br>guide</span><img class="gimg" src="img/${item.ex}-1.jpg" alt="" hidden></button>
+          <div class="dinfo"><div class="tgt">${esc(tgt)}</div><div class="last">${esc(L.lastText(ex))}</div><div class="cue">${esc(ex.cue)}</div></div>
+        </div>
+        ${logged}
+        <div class="noterow"><label for="xnote">Note</label><input id="xnote" data-ex="${item.ex}" value="${esc(ex.note)}" placeholder="seat height, notch, how it felt…"></div>
         <div class="hint">${esc(hint)}</div>
       </div>
     </div>`;
+  return { top, info };
 }
 
 const fmtRest = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
@@ -240,13 +270,7 @@ const fmtRest = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2,
 function footer() {
   return `<footer>
     <div class="cmdline"><label for="gnote">Note (all)&gt;</label><input id="gnote" value="${esc(db.settings.globalNote)}"></div>
-    <div class="fkeys">
-      <button class="btn" data-act="guide">F3 Guide</button>
-      <button class="btn" data-act="focusnote">F4 Note</button>
-      <button class="btn" data-act="rest">F5 Timer</button>
-      <button class="btn" data-act="swap">F6 Swap</button>
-      <button class="btn" data-act="skip">F8 Skip</button>
-    </div></footer>`;
+  </footer>`;
 }
 
 function programs() {
@@ -331,6 +355,11 @@ const act = {
   screen: (v) => { ui.screen = v; },
   letter: (v) => { ui.letter = v; setActive(null); },
   pick: (v) => { setActive(v); },
+  nav: (v) => {
+    const order = [WARM, ...workout().items.map((i) => i.ex)];
+    const i = Math.max(0, order.indexOf(ui.active)) + (+v);
+    setActive(order[Math.min(order.length - 1, Math.max(0, i))]);
+  },
   warmup: () => { setActive(WARM); },
   warmstart: () => { const s = ensureSession(); if (!s) return; s.warmStart = new Date().toISOString(); s.warmAt = s.warmStart; s.warmup = false; s.warmSec = 0; persist(); },
   warmstop: () => {
