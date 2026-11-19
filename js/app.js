@@ -130,13 +130,13 @@ function today() {
     } else if (st.status === "skipped") { cls = "skipped"; ic = I.skip; info = "skipped"; }
     if (isActive) { cls += " active"; if (st.status === "todo") ic = I.cur; }
     rows.push(`<button class="row ${cls} ${i % 2 ? "" : "alt"}" data-act="pick" data-v="${it.ex}">
-      <span class="ic">${ic}</span><span class="nm">${esc(ex.name)}</span><span>${esc(info)}</span><span>${st.sets.length}/${it.sets}</span></button>`);
+      <span class="ic">${ic}</span><span class="nm">${esc(ex.name)}${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}</span><span>${esc(info)}</span><span>${st.sets.length}/${it.sets}</span></button>`);
   });
 
   const allClosed = doneCount === w.items.length;
   return `
     <div class="drives">${drives}</div>
-    <div class="pathbar">▾ <span>gym:\\${esc(w.name.replace(" ", ""))}\\*.*</span><span class="right">${L.sessionCountFor(db, ui.letter)} ${L.sessionCountFor(db, ui.letter) === 1 ? "session" : "sessions"} logged</span></div>
+    <div class="pathbar">▾ <span>gym:\\${esc(w.name.replace(/\s+/g, ""))}\\*.*</span><span class="right">${L.sessionCountFor(db, ui.letter)} ${L.sessionCountFor(db, ui.letter) === 1 ? "session" : "sessions"} logged</span></div>
     <div class="panel">
       <div class="thead"><span></span><span>Name</span><span>Today</span><span>Sets</span></div>
       ${rows.join("")}
@@ -180,13 +180,15 @@ function detail() {
   const setNo = st.sets.length + 1;
   const finished = st.status === "done" || st.status === "skipped";
 
+  const hand = ex.per === "hand" ? "/hand" : "";
   const tgt = timed
-    ? (t.first ? `First time: start at ${t.reps} s` : `Today: ${item.sets} × ${t.reps} s ↑`)
+    ? (ex.fixed ? `Today: ${item.sets} × ${t.reps} s${t.kg ? " +" + L.fmtKg(t.kg) + " " + L.unitOf(ex) : ""}`
+      : t.first ? `First time: start at ${t.reps} s` : `Today: ${item.sets} × ${t.reps} s ↑`)
     : t.first
-      ? `First time: pick a weight that leaves 3–4 reps in reserve`
-      : `Today: ${t.kg ? L.fmtKg(t.kg) + " " + L.unitOf(ex) : "BW"} · ${item.sets} × ${item.min}–${item.max}${t.up ? " ↑" : ""}`;
+      ? (ex.type === "bodyweight" ? `First time: ${item.min}–${item.max} reps per set, stop about 1 rep before failure` : `First time: pick a weight that leaves 3–4 reps in reserve`)
+      : `Today: ${t.kg ? L.fmtKg(t.kg) + " " + L.unitOf(ex) + hand : "BW"} · ${item.sets} × ${L.rangeText(ex, item)}${t.up ? " ↑" : ""}`;
 
-  const logged = st.sets.map((x, i) => `<div class="logged">[x] Set ${i + 1} · ${timed ? x.reps + " s" : (x.kg ? L.fmtKg(x.kg) + " " + L.unitOf(ex) : "BW") + " × " + x.reps}</div>`).join("");
+  const logged = st.sets.map((x, i) => `<div class="logged">[x] Set ${i + 1} · ${timed ? x.reps + " s" + (x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : "") : (x.kg ? L.fmtKg(x.kg) + " " + L.unitOf(ex) : "BW") + " × " + x.reps + (ex.repUnit ? " " + ex.repUnit : "")}</div>`).join("");
 
   const stepper = (field, label, val, color, cap) => `
     <div class="stepper"><div class="cap">${cap}</div><div class="sr">
@@ -196,8 +198,10 @@ function detail() {
 
   const kgVal = d.kg == null || d.kg === 0 ? (ex.type === "weight" ? "0" : "BW") : L.fmtKg(d.kg);
   const hint = timed
-    ? `Next time: beat your best by +${ex.step} s`
-    : `${item.sets > 1 ? "All sets" : "Set"} at ${item.max} reps → ${ex.scale ? "next weight on the stack" : "+" + L.fmtKg(ex.step) + " " + L.unitOf(ex)} next time`;
+    ? (ex.fixed ? `Hold ${item.min} s. Once it is easy, add weight with the + button.` : `Next time: beat your best by +${ex.step} s`)
+    : ex.type === "bodyweight" && !(t.kg > 0)
+      ? `Top of the range on every set (${item.max}) → add reps, weight or a new range yourself.`
+      : `${item.sets > 1 ? "All sets" : "Set"} at ${item.max}${ex.repUnit ? " " + ex.repUnit : " reps"} → ${ex.scale ? "next weight on the stack" : "+" + L.fmtKg(ex.step) + " " + L.unitOf(ex)} next time`;
 
   return `
     <div class="panel">
@@ -212,10 +216,10 @@ function detail() {
         ${finished ? `<button class="btn" data-act="undo">Undo last</button>` : `
           <div class="setlabel">Set ${setNo} of ${item.sets}</div>
           <div class="steppers">
-            ${timed ? "" : stepper("kg", "weight", kgVal, "var(--blue)", ex.scale ? `${L.unitOf(ex).toUpperCase()} · machine scale` : `${L.unitOf(ex).toUpperCase()} · step ${L.fmtKg(ex.step)}`)}
-            ${stepper("reps", timed ? "seconds" : "reps", d.reps, "var(--green)", timed ? "SECONDS" : "REPS")}
+            ${timed && !ex.fixed ? "" : stepper("kg", "weight", kgVal, "var(--blue)", ex.scale ? `${L.unitOf(ex).toUpperCase()} · machine scale` : `${L.unitOf(ex).toUpperCase()}${ex.per === "hand" ? " · per hand" : ""} · step ${L.fmtKg(timed ? ex.wstep || 2.5 : ex.step)}`)}
+            ${stepper("reps", timed ? "seconds" : L.repCap(ex).toLowerCase(), d.reps, "var(--green)", L.repCap(ex))}
           </div>
-          <button class="btn primary log" data-act="log">Log set ${setNo} · then rest ${fmtRest(db.settings.restSec)}</button>
+          <button class="btn primary log" data-act="log">Log set ${setNo} · then rest ${fmtRest(L.restFor(db, ex))}</button>
           ${st.sets.length ? `<button class="btn" data-act="undo">Undo last</button>` : ""}`}
         <div class="hint">${esc(hint)}</div>
       </div>
@@ -245,15 +249,15 @@ function programs() {
       ${w.items.map((it, i) => {
         const ex = db.exercises[it.ex];
         const timed = ex.type === "timed";
-        return `<div class="prow ${i % 2 ? "" : "alt"}"><span class="nm">${esc(ex.name)}</span>
+        return `<div class="prow ${i % 2 ? "" : "alt"}"><span class="nm">${esc(ex.name)}${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}</span>
           <span class="mini"><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="-1" aria-label="Fewer sets">−</button><b>${it.sets}</b><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="1" aria-label="More sets">+</button></span>
-          <span><button class="btn stepbtn" data-act="prange" data-l="${l}" data-i="${i}" aria-label="Edit reps">${timed ? it.min + "s+" : it.min + "–" + it.max}</button></span>
+          <span><button class="btn stepbtn" data-act="prange" data-l="${l}" data-i="${i}" aria-label="Edit reps">${timed ? it.min + (ex.fixed ? "s" : "s+") : it.min === it.max ? it.min : it.min + "–" + it.max}</button></span>
           <span>${ex.scale ? `<button class="btn stepbtn" data-act="exdlg" data-ex="${it.ex}">scale</button>` : `<button class="btn stepbtn" data-act="pstep" data-ex="${it.ex}">${L.fmtKg(ex.step)}${timed ? "s" : ""}</button>`}</span>
           <span><button class="btn stepbtn xbtn" data-act="premove" data-l="${l}" data-i="${i}" aria-label="Remove ${esc(ex.name)} from workout ${l}">×</button></span></div>`;
       }).join("")}
       <div class="status"><button class="btn" data-act="allsets" data-l="${l}">All to 3 sets</button> <button class="btn" data-act="padd" data-l="${l}">+ Add exercise</button></div>
     </div>`;
-  }).join("") + `<p class="small">Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises (plank) have no range: “20s+” is the starting time, then the target is your last best + the step.</p>`;
+  }).join("") + `<p class="small">Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises: “60s” is a fixed hold time (plank); “20s+” is a starting time, then the target is your last best + the step. SS = superset with the next row.</p>`;
 }
 
 function settings() {
@@ -286,8 +290,8 @@ function dialog() {
 
 // ---------- rest timer ----------
 let timerId = null;
-function startRest() {
-  ui.restEnd = Date.now() + db.settings.restSec * 1000;
+function startRest(sec = db.settings.restSec) {
+  ui.restEnd = Date.now() + sec * 1000;
   tick();
 }
 function tick() {
@@ -336,10 +340,10 @@ const act = {
     const ex = db.exercises[item.ex];
     const d = draftFor(item);
     const e = L.entryFor(s, item.ex);
-    e.sets.push({ kg: ex.type === "timed" ? null : (d.kg || 0), reps: d.reps });
+    e.sets.push({ kg: ex.type === "timed" && !ex.fixed ? null : (d.kg || 0), reps: d.reps });
     if (e.sets.length >= item.sets) { e.status = "done"; persist(); const n = firstOpenItem(); setActive(n ? n.ex : item.ex); }
     else persist();
-    startRest();
+    startRest(L.restFor(db, ex));
   },
   undo: () => {
     const s = session(); if (!s) return;
@@ -386,6 +390,7 @@ const act = {
       <div class="frow"><label for="ex_cur">${timed ? "Current best (s)" : "Current weight (kg)"}</label><input id="ex_cur" type="text" inputmode="decimal" value="${cur === null ? "" : esc(cur)}" placeholder="${timed ? "e.g. 30" : "e.g. 25"}"></div>
       <p class="small">Today's target starts from this. Changing it starts the rep count over at the low end.</p>
       <div class="frow"><label for="ex_step">Step (${timed ? "s" : "kg"})</label><input id="ex_step" type="text" inputmode="decimal" value="${esc(e.step)}"></div>
+      <div class="frow"><label for="ex_rest">Rest (s)</label><input id="ex_rest" type="text" inputmode="numeric" value="${e.rest ? esc(e.rest) : ""}" placeholder="default ${db.settings.restSec}"></div>
       <div id="ex_scalebox" ${timed ? "hidden" : ""}>
         <label class="lbl" for="sc_vals">Weight scale (kg, optional)</label>
         <textarea id="sc_vals" rows="3" placeholder="Weights the machine can select, lowest first, separated by spaces. Empty = fixed step.">${esc(e.scale ? e.scale.values.join("  ") : "")}</textarea>
@@ -424,6 +429,8 @@ const act = {
       e = db.exercises[exId] = { name, type, step, cue: "", note: "", last: null, scale: null, custom: true };
     } else e = db.exercises[id];
     e.name = name; e.step = step; e.cue = $("#ex_cue").value.trim(); e.scale = scale;
+    const restN = parseInt($("#ex_rest").value, 10);
+    if (restN > 0) e.rest = restN; else delete e.rest;
     if (cur !== null) {
       const before = e.last ? (e.type === "timed" ? e.last.top : e.last.kg) : null;
       if (cur !== before) L.setCurrent(e, cur);
@@ -473,20 +480,20 @@ const act = {
   prange: (_, el) => {
     const it = db.workouts[el.dataset.l].items[+el.dataset.i], ex = db.exercises[it.ex];
     if (ex.type === "timed") {
-      const v = prompt(`Starting time for ${ex.name} (seconds). After that the target is your last best + ${ex.step} s.`, it.min);
+      const v = prompt(ex.fixed ? `Hold time for ${ex.name} (seconds)` : `Starting time for ${ex.name} (seconds). After that the target is your last best + ${ex.step} s.`, it.min);
       const n = parseInt(v, 10);
       if (v != null && n > 0) { it.min = n; it.max = n; persist(); }
       return;
     }
     const v = prompt(`Rep range for ${ex.name} (min-max)`, `${it.min}-${it.max}`);
-    const m = v && v.match(/^\s*(\d+)\s*[-–]\s*(\d+)\s*$/);
-    if (v != null && m && +m[1] > 0 && +m[2] >= +m[1]) { it.min = +m[1]; it.max = +m[2]; persist(); }
-    else if (v != null) alert("Use the form 8-10.");
+    const m = v && v.match(/^\s*(\d+)\s*(?:[-–]\s*(\d+))?\s*$/);
+    if (v != null && m && +m[1] > 0 && (m[2] == null || +m[2] >= +m[1])) { it.min = +m[1]; it.max = m[2] == null ? +m[1] : +m[2]; persist(); }
+    else if (v != null) alert("Use the form 8-10 (or a single number).");
   },
   close: () => { ui.dialog = null; },
   noop: () => "norender",
   focusnote: () => { const n = $("#xnote"); if (n) { n.focus(); n.select(); } return "norender"; },
-  rest: () => { startRest(); return "norender"; },
+  rest: () => { const ex = ui.active && ui.active !== WARM ? db.exercises[ui.active] : null; startRest(ex ? L.restFor(db, ex) : undefined); return "norender"; },
   finish: () => {
     const s = session(); if (!s) return;
     const w = workout();
@@ -530,7 +537,7 @@ function bump(field, dir) {
   const ex = db.exercises[item.ex];
   const d = draftFor(item);
   if (field === "kg") d.kg = L.stepWeight(ex, d.kg || 0, dir);
-  else d.reps = Math.max(1, d.reps + dir * (ex.type === "timed" ? ex.step : 1));
+  else d.reps = Math.max(1, d.reps + dir * L.repStepOf(ex));
 }
 
 document.addEventListener("click", (e) => {

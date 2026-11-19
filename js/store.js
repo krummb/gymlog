@@ -1,15 +1,24 @@
 // Storage layer. Today: the phone's localStorage.
 // Later: same shape in Firestore (users/{uid}/exercises, workouts, sessions, settings),
 // so only this file changes when we switch.
-import { SEED_VERSION, seedExercises, seedWorkouts, seedSettings } from "./seed.js";
+import { SEED_VERSION, PROGRAM_VERSION, seedExercises, seedWorkouts, seedSettings } from "./seed.js";
 
 const KEY = "gymlog.v1";
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
+// A new exercise from the seed; "start" becomes a typed baseline ("Start: 10 kg")
+function newEx(e) {
+  const { start, ...rest } = clone(e);
+  const x = { ...rest, note: "", last: null };
+  if (start != null) x.last = baseline(x, start);
+  return x;
+}
+const baseline = (ex, v) => ({ date: new Date().toISOString(), kg: ex.type === "timed" ? null : v, sets: [{ kg: ex.type === "timed" ? null : v, reps: ex.type === "timed" ? v : 0 }], top: ex.type === "timed" ? v : 0, baseline: true });
+
 function fresh() {
   const exercises = {};
-  for (const [id, e] of Object.entries(seedExercises)) exercises[id] = { ...clone(e), note: "", last: null };
-  return { seed: SEED_VERSION, exercises, workouts: clone(seedWorkouts), sessions: {}, settings: clone(seedSettings) };
+  for (const id of Object.keys(seedExercises)) exercises[id] = newEx(seedExercises[id]);
+  return { seed: SEED_VERSION, program: PROGRAM_VERSION, exercises, workouts: clone(seedWorkouts), sessions: {}, settings: clone(seedSettings) };
 }
 
 // Exercises that turned out to be the same machine: [from, to]
@@ -33,11 +42,30 @@ function mergeExercises(db) {
   }
 }
 
+// Program v2 (2026-11-19): the free-weight program replaces workouts A-D once.
+// Exercises that already exist keep their results, note, step and scale; only name, type, cue and the
+// new fields (per, repUnit, rest, fixed...) are taken from the seed. The old A-D are kept in db.archive.
+const PATCH = ["name", "type", "cue", "per", "repUnit", "repStep", "rest", "fixed", "wstep"];
+function applyProgram(db) {
+  if ((db.program || 1) >= PROGRAM_VERSION) return;
+  for (const [id, seed] of Object.entries(seedExercises)) {
+    const ex = db.exercises[id];
+    if (!ex) continue;
+    for (const k of PATCH) { if (k in seed) ex[k] = seed[k]; else delete ex[k]; }
+    if (!ex.last && seed.start != null) ex.last = baseline(ex, seed.start);
+  }
+  db.archive = db.archive || {};
+  db.archive.program1 = { savedAt: new Date().toISOString(), workouts: db.workouts };
+  db.workouts = clone(seedWorkouts);
+  db.program = PROGRAM_VERSION;
+}
+
 // Bring older saved data up to date: add exercises/scales that the seed has and the saved data lacks
 function migrate(db) {
   mergeExercises(db);
+  applyProgram(db);
   for (const [id, e] of Object.entries(seedExercises)) {
-    if (!db.exercises[id]) db.exercises[id] = { ...clone(e), note: "", last: null };
+    if (!db.exercises[id]) db.exercises[id] = newEx(e);
     else if (e.scale && !("scale" in db.exercises[id])) db.exercises[id].scale = clone(e.scale);
     else if (e.scale && db.exercises[id].scale && db.exercises[id].scale.unit !== e.scale.unit
       && JSON.stringify(db.exercises[id].scale.values) === JSON.stringify(e.scale.values)) db.exercises[id].scale.unit = e.scale.unit; // unit corrected (lb -> kg), values untouched

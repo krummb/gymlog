@@ -13,7 +13,20 @@ export function stepWeight(ex, cur, dir) {
     const p = [...v].reverse().find((x) => x < cur - 1e-9);
     return p === undefined ? 0 : p;
   }
-  return Math.max(0, round(cur + dir * ex.step));
+  return Math.max(0, round(cur + dir * (ex.type === "timed" ? ex.wstep || 2.5 : ex.step)));
+}
+
+export const restFor = (db, ex) => ex.rest || db.settings.restSec;
+export const repStepOf = (ex) => (ex.type === "timed" ? ex.step : ex.repStep || 1);
+export const repCap = (ex) => (ex.type === "timed" ? "SECONDS" : ex.repUnit === "m" ? "METRES" : ex.repUnit ? ex.repUnit.toUpperCase() : "REPS");
+const PER = { hand: "per hand", side: "per side", leg: "per leg" };
+export const perText = (ex) => PER[ex.per] || "";
+// "8–10", "30 m", "8–10/leg": the rep range of one item
+export function rangeText(ex, item, short = false) {
+  const r = item.min === item.max ? `${item.min}` : `${item.min}–${item.max}`;
+  const u = ex.repUnit ? " " + ex.repUnit : "";
+  const per = ex.per === "leg" || ex.per === "side" ? (short ? "/" + ex.per : " " + PER[ex.per]) : "";
+  return r + u + per;
 }
 
 export const fmtKg = (n) => (n == null ? "–" : String(round(n)).replace(/\.0+$/, ""));
@@ -54,6 +67,7 @@ export function target(db, item) {
   const last = ex.last;
   const t = { kg: null, reps: item.max, sets: item.sets, up: false, first: !last };
   // Timed (plank): no fixed range. First time start at item.min, afterwards beat your best by one step.
+  if (ex.type === "timed" && ex.fixed) { t.reps = item.min; t.kg = (last && last.kg) || 0; t.first = false; return t; }
   if (ex.type === "timed") { t.reps = last ? last.top + ex.step : item.min; t.dyn = true; return t; }
   if (!last) {
     t.kg = ex.type === "weight" ? 0 : null;
@@ -77,8 +91,8 @@ export function target(db, item) {
 export function targetText(db, item) {
   const ex = db.exercises[item.ex];
   const t = target(db, item);
-  if (ex.type === "timed") return `${item.sets} × ${t.reps} s`;
-  const range = `${item.sets} × ${item.min}–${item.max}`;
+  if (ex.type === "timed") return `${item.sets} × ${t.reps} s${ex.fixed && t.kg ? " +" + fmtKg(t.kg) + "kg" : ""}`;
+  const range = `${item.sets} × ${rangeText(ex, item, true)}`;
   if (t.first) return ex.type === "weight" ? `new · ${range}` : `BW · ${range}`;
   if (t.kg == null || t.kg === 0) return `BW · ${range}`;
   return `${fmtKg(t.kg)} ${unitOf(ex)} · ${range}`;
@@ -86,10 +100,16 @@ export function targetText(db, item) {
 
 // "64 kg × 12, 12" when every set used the same weight, "55×12 · 64×12" when the weight changed between sets
 export function setsSummary(ex, sets, withUnit = true) {
-  if (ex.type === "timed") return sets.map((x) => x.reps).join(", ") + " s";
+  const u = withUnit ? " " + unitOf(ex) : "";
+  if (ex.type === "timed") {
+    const t = sets.map((x) => x.reps).join(", ") + " s";
+    const w = Math.max(...sets.map((x) => x.kg || 0));
+    return w ? `${t} +${fmtKg(w)}${u}` : t;
+  }
+  const ru = ex.repUnit ? " " + ex.repUnit : "";
   const kgs = sets.map((x) => x.kg || 0);
-  if (kgs.every((k) => k === kgs[0])) return `${kgs[0] ? fmtKg(kgs[0]) + (withUnit ? " " + unitOf(ex) : "") : "BW"} × ${sets.map((x) => x.reps).join(", ")}`;
-  return sets.map((x) => `${fmtKg(x.kg || 0)}×${x.reps}`).join(" · ") + (withUnit ? " " + unitOf(ex) : "");
+  if (kgs.every((k) => k === kgs[0])) return `${kgs[0] ? fmtKg(kgs[0]) + u : "BW"} × ${sets.map((x) => x.reps).join(", ")}${ru}`;
+  return sets.map((x) => `${fmtKg(x.kg || 0)}×${x.reps}`).join(" · ") + ru + u;
 }
 
 export function lastText(ex) {

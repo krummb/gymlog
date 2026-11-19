@@ -141,3 +141,5 @@ html, body, button, input { touch-action:manipulation; }
 .checks input { width:18px; height:18px; }
 .xbtn { font-weight:bold; width:26px; }
 .status .btn { margin-right:4px; }
+
+.row .nm .tag, .prow .nm .tag { font-style:normal; font-size:10px; margin-left:5px; padding:0 3px; color:var(--teal); border:1px solid var(--teal); vertical-align:1px; }
