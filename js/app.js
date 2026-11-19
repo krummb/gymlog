@@ -280,7 +280,7 @@ function programs() {
       ${w.items.map((it, i) => {
         const ex = db.exercises[it.ex];
         const timed = ex.type === "timed";
-        return `<div class="prow ${i % 2 ? "" : "alt"}"><span class="nmcell"><span class="nm">${esc(ex.name)}${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}</span><button class="restbtn ${ex.rest ? "custom" : ""}" data-act="prest" data-ex="${it.ex}" aria-label="Rest time for ${esc(ex.name)}">rest ${fmtRest(L.restFor(db, ex))}${ex.rest ? "" : " (default)"}</button></span>
+        return `<div class="prow ${i % 2 ? "" : "alt"}"><span class="nmcell"><span class="nm">${esc(ex.name)}${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}</span><button class="restbtn ${ex.rest ? "custom" : ""}" data-act="prest" data-ex="${it.ex}" aria-label="Rest time for ${esc(ex.name)}">rest ${fmtRest(L.restFor(db, ex))}</button></span>
           <span class="mini"><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="-1" aria-label="Fewer sets">−</button><b>${it.sets}</b><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="1" aria-label="More sets">+</button></span>
           <span><button class="btn stepbtn" data-act="prange" data-l="${l}" data-i="${i}" aria-label="Edit reps">${timed ? it.min + (ex.fixed ? "s" : "s+") : it.min === it.max ? it.min : it.min + "–" + it.max}</button></span>
           <span>${ex.scale ? `<button class="btn stepbtn" data-act="exdlg" data-ex="${it.ex}">scale</button>` : `<button class="btn stepbtn" data-act="pstep" data-ex="${it.ex}">${L.fmtKg(ex.step)}${timed ? "s" : ""}</button>`}</span>
