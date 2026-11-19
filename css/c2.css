@@ -163,3 +163,15 @@ html, body, button, input { touch-action:manipulation; }
 .btn.nav { width:44px; height:40px; padding:0; font-size:16px; flex:none; }
 .detail .fkeys { margin-top:2px; }
 .img img[hidden], .gimgs img[hidden] { display:none; }
+
+/* Layout v3: title (with rest clock) / body (controls, info, list) / footer (F-keys, menu, A-D, note) */
+.title { justify-content:space-between; gap:8px; }
+.title .ttl { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.title .restclock { margin-left:auto; padding-right:0; line-height:1; }
+footer .menu { border-bottom:0; padding:0; min-height:32px; }
+footer .menu button { flex:1; height:32px; border-color:var(--btnline); background:var(--btn); }
+footer .menu button.on { background:var(--sel); border-color:var(--selline); }
+footer .drives .drive { height:32px; }
+.logrow { display:flex; gap:6px; }
+.logrow .log { flex:1; min-width:0; }
+.logrow .undo { width:64px; height:44px; padding:0; flex:none; }

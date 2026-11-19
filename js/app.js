@@ -79,16 +79,19 @@ function ensureSession() {
 function render() {
   const app = $("#app");
   const scroll = app.querySelector(".body")?.scrollTop || 0;
+  const today_ = ui.screen === "today";
   app.innerHTML = `
-    <header class="title">GymLog – ${ui.screen === "today" ? `Workout ${ui.letter} · ${esc(workout().name)}` : ui.screen === "programs" ? "Programs" : "Settings"}</header>
-    <nav class="menu">
-      <button data-act="screen" data-v="today" class="${ui.screen === "today" ? "on" : ""}"><u>T</u>oday</button>
-      <button data-act="screen" data-v="programs" class="${ui.screen === "programs" ? "on" : ""}"><u>P</u>rograms</button>
-      <button data-act="screen" data-v="settings" class="${ui.screen === "settings" ? "on" : ""}"><u>S</u>ettings</button>
-      <span class="restclock" id="restclock"></span>
-    </nav>
-    <main class="body">${ui.screen === "today" ? today() : ui.screen === "programs" ? programs() : settings()}</main>
-    ${ui.screen === "today" ? footer() : ""}
+    <header class="title"><span class="ttl">GymLog – ${today_ ? `Workout ${ui.letter} · ${esc(workout().name)}` : ui.screen === "programs" ? "Programs" : "Settings"}</span><span class="restclock" id="restclock"></span></header>
+    <main class="body">${today_ ? today() : ui.screen === "programs" ? programs() : settings()}</main>
+    <footer>
+      ${today_ ? fkeys() : ""}
+      <nav class="menu">
+        <button data-act="screen" data-v="today" class="${ui.screen === "today" ? "on" : ""}"><u>T</u>oday</button>
+        <button data-act="screen" data-v="programs" class="${ui.screen === "programs" ? "on" : ""}"><u>P</u>rograms</button>
+        <button data-act="screen" data-v="settings" class="${ui.screen === "settings" ? "on" : ""}"><u>S</u>ettings</button>
+      </nav>
+      ${today_ ? drivesBar() + `<div class="cmdline"><label for="gnote">Note (all)&gt;</label><input id="gnote" value="${esc(db.settings.globalNote)}"></div>` : ""}
+    </footer>
     ${ui.dialog ? dialog() : ""}`;
   const b = app.querySelector(".body");
   if (b) b.scrollTop = scroll;
@@ -103,9 +106,7 @@ function wireImg(img) {
   if (img.complete && img.naturalWidth) ok();
 }
 
-function today() {
-  const s = session();
-  const w = workout();
+function drivesBar() {
   const doneSet = L.cycleDone(db);
   const open = L.openSession(db);
   const drives = L.LETTERS.map((l) => {
@@ -113,6 +114,12 @@ function today() {
     return `<button class="drive ${l === ui.letter ? "sel" : ""}" data-act="letter" data-v="${l}" aria-label="Workout ${l}${isDone ? ", done" : ""}">${I.disk}${l}${isDone ? '<b class="ok">✓</b>' : ""}</button>`;
   }).join("");
 
+  return `<div class="drives">${drives}</div>`;
+}
+
+function today() {
+  const s = session();
+  const w = workout();
   if (!ui.active || (ui.active !== WARM && !w.items.some((i) => i.ex === ui.active))) {
     const fresh = !s || !!s.warmStart || (!s.warmup && !Object.keys(s.entries).length);
     setActive(fresh ? WARM : firstOpenItem()?.ex || null);
@@ -150,7 +157,6 @@ function today() {
     ${dt.top}
     ${allClosed ? fin : ""}
     ${dt.info}
-    <div class="drives">${drives}</div>
     <div class="pathbar">▾ <span>gym:\\${esc(w.name.replace(/\s+/g, ""))}\\*.*</span><span class="right">${L.sessionCountFor(db, ui.letter)} ${L.sessionCountFor(db, ui.letter) === 1 ? "session" : "sessions"} logged</span></div>
     <div class="panel">
       <div class="thead"><span></span><span>Name</span><span>Today</span><span>Sets</span></div>
@@ -195,7 +201,6 @@ function warmDetail() {
           : running ? `<button class="btn primary log" data-act="warmstop">Stop · warm-up done</button>`
           : `<button class="btn primary log" data-act="warmstart">Start warm-up</button><button class="btn" data-act="warmdone">Mark done (no timer)</button>`}
         ${elapsed >= 300 && running ? `<div class="hint">5 min reached. Stop whenever you feel warm.</div>` : ""}
-        ${fkeys()}
       </div>
     </div>`;
   return { top, info: "" };
@@ -245,9 +250,8 @@ function detail() {
             ${timed && !ex.fixed ? "" : stepper("kg", "weight", kgVal, "var(--blue)", ex.scale ? `${L.unitOf(ex).toUpperCase()} · machine scale` : `${L.unitOf(ex).toUpperCase()}${ex.per === "hand" ? " · per hand" : ""} · step ${L.fmtKg(timed ? ex.wstep || 2.5 : ex.step)}`)}
             ${stepper("reps", timed ? "seconds" : L.repCap(ex).toLowerCase(), d.reps, "var(--green)", L.repCap(ex))}
           </div>
-          <button class="btn primary log" data-act="log">Log set ${setNo} · then rest ${fmtRest(L.restFor(db, ex))}</button>
-          ${st.sets.length ? `<button class="btn" data-act="undo">Undo last</button>` : ""}`}
-        ${fkeys()}
+          <div class="logrow"><button class="btn primary log" data-act="log">Log set ${setNo} · then rest ${fmtRest(L.restFor(db, ex))}</button>
+          ${st.sets.length ? `<button class="btn undo" data-act="undo">Undo</button>` : ""}</div>`}
       </div>
     </div>`;
   const info = `
@@ -266,12 +270,6 @@ function detail() {
 }
 
 const fmtRest = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
-
-function footer() {
-  return `<footer>
-    <div class="cmdline"><label for="gnote">Note (all)&gt;</label><input id="gnote" value="${esc(db.settings.globalNote)}"></div>
-  </footer>`;
-}
 
 function programs() {
   return L.LETTERS.map((l) => {
