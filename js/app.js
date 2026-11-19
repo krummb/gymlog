@@ -1,5 +1,6 @@
 import { load, save, exportJson, importJson } from "./store.js";
 import * as L from "./logic.js";
+import { GUIDES } from "./guides.js";
 
 let db = load();
 const MODES = ["auto", "light", "dark"];
@@ -91,7 +92,15 @@ function render() {
     ${ui.dialog ? dialog() : ""}`;
   const b = app.querySelector(".body");
   if (b) b.scrollTop = scroll;
+  app.querySelectorAll("img.gimg").forEach(wireImg);
   tick();
+}
+
+// Pictures are optional: show an image once it loads, keep the placeholder otherwise
+function wireImg(img) {
+  const ok = () => { img.hidden = false; img.closest(".gwrap")?.classList.add("ok"); };
+  img.onload = ok;
+  if (img.complete && img.naturalWidth) ok();
 }
 
 function today() {
@@ -208,7 +217,7 @@ function detail() {
       <div class="pathbar">▾ gym:\\${esc(ui.letter)}\\${esc(ex.name)}\\sets</div>
       <div class="detail">
         <div class="dhead">
-          <button class="img" data-act="guide" aria-label="Open position guide">IMG<br>guide</button>
+          <button class="img gwrap" data-act="guide" aria-label="Open position guide"><span class="ph">IMG<br>guide</span><img class="gimg" src="img/${item.ex}-1.jpg" alt="" hidden></button>
           <div class="dinfo"><div class="tgt">${esc(tgt)}</div><div class="last">${esc(L.lastText(ex))}</div><div class="cue">${esc(ex.cue)}</div></div>
         </div>
         <div class="noterow"><label for="xnote">Note</label><input id="xnote" data-ex="${item.ex}" value="${esc(ex.note)}" placeholder="seat height, notch, how it felt…"></div>
@@ -373,8 +382,20 @@ const act = {
   },
   guide: () => {
     if (!ui.active || ui.active === WARM) return "norender";
-    const ex = db.exercises[ui.active];
-    ui.dialog = { title: ex.name, body: `<div class="guideimg">Illustration coming</div><p>${esc(ex.cue)}</p>${ex.note ? `<p class="notecol">Note: ${esc(ex.note)}</p>` : ""}` };
+    const ex = db.exercises[ui.active], g = GUIDES[ui.active];
+    const per = L.perText(ex);
+    const imgs = [1, 2].map((n) => `<img class="gimg" src="img/${ui.active}-${n}.jpg" alt="${esc(ex.name)}, picture ${n}" hidden>`).join("");
+    const how = g ? `
+      <p class="gcue">${esc(g.cue)}</p>
+      <div class="glbl">How</div>
+      <ol class="gsteps">${g.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
+      <div class="glbl bad">Common mistakes</div>
+      <p class="gbad">${esc(g.mistakes)}</p>` : `<p class="gcue">${esc(ex.cue)}</p>`;
+    ui.dialog = { title: ex.name, body: `
+      <div class="gimgs gwrap"><div class="guideimg ph">Image coming</div>${imgs}</div>
+      ${per ? `<p class="small">Weight and reps are logged ${esc(per)}.</p>` : ""}
+      ${how}
+      ${ex.note ? `<p class="notecol">Note: ${esc(ex.note)}</p>` : ""}` };
   },
   mode: (v) => { db.settings.mode = v; persist(); applyMode(); },
   exdlg: (_, el) => {

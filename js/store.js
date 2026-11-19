@@ -1,15 +1,17 @@
 // Storage layer. Today: the phone's localStorage.
 // Later: same shape in Firestore (users/{uid}/exercises, workouts, sessions, settings),
 // so only this file changes when we switch.
+import { GUIDES } from "./guides.js";
 import { SEED_VERSION, PROGRAM_VERSION, seedExercises, seedWorkouts, seedSettings } from "./seed.js";
 
 const KEY = "gymlog.v1";
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
 // A new exercise from the seed; "start" becomes a typed baseline ("Start: 10 kg")
-function newEx(e) {
+function newEx(e, id) {
   const { start, ...rest } = clone(e);
   const x = { ...rest, note: "", last: null };
+  if (GUIDES[id]) x.cue = GUIDES[id].cue;
   if (start != null) x.last = baseline(x, start);
   return x;
 }
@@ -17,8 +19,8 @@ const baseline = (ex, v) => ({ date: new Date().toISOString(), kg: ex.type === "
 
 function fresh() {
   const exercises = {};
-  for (const id of Object.keys(seedExercises)) exercises[id] = newEx(seedExercises[id]);
-  return { seed: SEED_VERSION, program: PROGRAM_VERSION, exercises, workouts: clone(seedWorkouts), sessions: {}, settings: clone(seedSettings) };
+  for (const id of Object.keys(seedExercises)) exercises[id] = newEx(seedExercises[id], id);
+  return { seed: SEED_VERSION, program: PROGRAM_VERSION, guideRev: GUIDE_REV, exercises, workouts: clone(seedWorkouts), sessions: {}, settings: clone(seedSettings) };
 }
 
 // Exercises that turned out to be the same machine: [from, to]
@@ -45,6 +47,8 @@ function mergeExercises(db) {
 // Program v2 (2026-11-19): the free-weight program replaces workouts A-D once.
 // Exercises that already exist keep their results, note, step and scale; only name, type, cue and the
 // new fields (per, repUnit, rest, fixed...) are taken from the seed. The old A-D are kept in db.archive.
+// Bump when guides.js cues change and should replace the saved one-line cues (once)
+const GUIDE_REV = 1;
 const PATCH = ["name", "type", "cue", "per", "repUnit", "repStep", "rest", "fixed", "wstep"];
 function applyProgram(db) {
   if ((db.program || 1) >= PROGRAM_VERSION) return;
@@ -65,10 +69,14 @@ function migrate(db) {
   mergeExercises(db);
   applyProgram(db);
   for (const [id, e] of Object.entries(seedExercises)) {
-    if (!db.exercises[id]) db.exercises[id] = newEx(e);
+    if (!db.exercises[id]) db.exercises[id] = newEx(e, id);
     else if (e.scale && !("scale" in db.exercises[id])) db.exercises[id].scale = clone(e.scale);
     else if (e.scale && db.exercises[id].scale && db.exercises[id].scale.unit !== e.scale.unit
       && JSON.stringify(db.exercises[id].scale.values) === JSON.stringify(e.scale.values)) db.exercises[id].scale.unit = e.scale.unit; // unit corrected (lb -> kg), values untouched
+  }
+  if ((db.guideRev || 0) < GUIDE_REV) {
+    for (const [id, g] of Object.entries(GUIDES)) if (db.exercises[id]) db.exercises[id].cue = g.cue;
+    db.guideRev = GUIDE_REV;
   }
   return db;
 }
