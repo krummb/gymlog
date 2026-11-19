@@ -175,3 +175,13 @@ footer .drives .drive { height:32px; }
 .logrow { display:flex; gap:6px; }
 .logrow .log { flex:1; min-width:0; }
 .logrow .undo { width:64px; height:44px; padding:0; flex:none; }
+
+/* Info sheet: full height from the top; title bar stays put while scrolling */
+.overlay.sheet { padding:0; align-items:flex-start; background:var(--win); }
+.overlay.sheet .win { max-width:520px; max-height:none; height:100dvh; border:0; box-shadow:none; }
+.overlay.sheet .win .title { position:sticky; top:0; z-index:1; padding-top:env(safe-area-inset-top); min-height:36px; }
+.overlay.sheet .x { height:36px; width:48px; font-size:24px; }
+.overlay.sheet .gimgs { margin-top:12px; }
+.overlay.sheet .gimgs img { max-height:70dvh; }
+.overlay.sheet .guideimg { height:140px; }
+.gspace { height:60dvh; }

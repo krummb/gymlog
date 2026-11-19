@@ -314,7 +314,7 @@ function settings() {
 
 function dialog() {
   const d = ui.dialog;
-  return `<div class="overlay" data-act="close"><div class="win" role="dialog" aria-label="${esc(d.title)}" data-act="noop">
+  return `<div class="overlay ${d.sheet ? "sheet" : ""}" data-act="close"><div class="win" role="dialog" aria-label="${esc(d.title)}" data-act="noop">
     <div class="title">${esc(d.title)}<button class="x" data-act="close" aria-label="Close">×</button></div>
     <div class="detail">${d.body}${d.ok === false ? "" : '<button class="btn primary wide" data-act="close">OK</button>'}</div></div></div>`;
 }
@@ -418,11 +418,13 @@ const act = {
       <ol class="gsteps">${g.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
       <div class="glbl bad">Common mistakes</div>
       <p class="gbad">${esc(g.mistakes)}</p>` : `<p class="gcue">${esc(ex.cue)}</p>`;
-    ui.dialog = { title: ex.name, body: `
-      <div class="gimgs gwrap"><div class="guideimg ph">Image coming</div>${imgs}</div>
+    // Full-height sheet: text first (readable in the top part of the screen), picture below, blank space last so the picture can be scrolled up into reach
+    ui.dialog = { title: ex.name, sheet: true, ok: false, body: `
       ${per ? `<p class="small">Weight and reps are logged ${esc(per)}.</p>` : ""}
       ${how}
-      ${ex.note ? `<p class="notecol">Note: ${esc(ex.note)}</p>` : ""}` };
+      ${ex.note ? `<p class="notecol">Note: ${esc(ex.note)}</p>` : ""}
+      <div class="gimgs gwrap"><div class="guideimg ph">Image coming</div>${imgs}</div>
+      <div class="gspace"></div>` };
   },
   mode: (v) => { db.settings.mode = v; persist(); applyMode(); },
   exdlg: (_, el) => {
