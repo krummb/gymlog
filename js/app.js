@@ -2,6 +2,7 @@ import { load, save, exportJson, importJson } from "./store.js";
 import * as L from "./logic.js";
 import { GUIDES } from "./guides.js";
 import * as Sync from "./sync.js";
+import { ALTS } from "./alts.js";
 
 let db = load();
 const MODES = ["auto", "light", "dark"];
@@ -237,11 +238,16 @@ function detail() {
       <button class="btn sq" aria-label="More ${label}" data-act="inc" data-v="${field}">${I.plus}</button></div></div>`;
 
   const kgVal = d.kg == null || d.kg === 0 ? (ex.type === "weight" ? "0" : "BW") : L.fmtKg(d.kg);
+  // Hint line: manual-progression cases keep their advice; superset items name their partner; the rest list alternatives.
+  const its = items(), ix = its.findIndex((i) => i.ex === item.ex);
+  const partner = item.ss ? (its[ix + 1] && its[ix + 1].ss && !(its[ix - 1] && its[ix - 1].ss) ? its[ix + 1] : its[ix - 1] && its[ix - 1].ss ? its[ix - 1] : null) : null;
+  const alts = (ALTS[item.ex] || []).filter((id) => db.exercises[id] && !its.some((i) => i.ex === id)).slice(0, 2).map((id) => db.exercises[id].name);
   const hint = timed
     ? (ex.fixed ? `Hold ${item.min} s. Once it is easy, add weight with the + button.` : `Next time: beat your best by +${ex.step} s`)
     : ex.type === "bodyweight" && !(t.kg > 0)
       ? `Top of the range on every set (${item.max}) → add reps, weight or a new range yourself.`
-      : `${item.sets > 1 ? "All sets" : "Set"} at ${item.max}${ex.repUnit ? " " + ex.repUnit : " reps"} → ${ex.scale ? "next weight on the stack" : "+" + L.fmtKg(ex.step) + " " + L.unitOf(ex)} next time`;
+      : partner ? `Superset with ${db.exercises[partner.ex].name}: alternate sets.`
+      : alts.length ? `Alternative: ${alts.join(" or ")} (F6 Swap).` : "";
 
   const top = `
     <div class="panel">
@@ -265,7 +271,7 @@ function detail() {
         </div>
         ${logged}
         <div class="noterow"><label for="xnote">Note</label><input id="xnote" data-ex="${item.ex}" value="${esc(ex.note)}" placeholder="seat height, notch, how it felt…"></div>
-        <div class="hint">${esc(hint)}</div>
+        ${hint ? `<div class="hint">${esc(hint)}</div>` : ""}
       </div>
     </div>`;
   return { top, info };
