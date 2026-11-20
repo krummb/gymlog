@@ -20,7 +20,7 @@ const baseline = (ex, v) => ({ date: new Date().toISOString(), kg: ex.type === "
 function fresh() {
   const exercises = {};
   for (const [id, e] of Object.entries({ ...seedExercises, ...extraExercises })) exercises[id] = newEx(e, id);
-  return { seed: SEED_VERSION, program: PROGRAM_VERSION, guideRev: GUIDE_REV, exercises, workouts: clone(seedWorkouts), sessions: {}, settings: clone(seedSettings) };
+  return { seed: SEED_VERSION, program: PROGRAM_VERSION, guideRev: GUIDE_REV, nameRev: NAME_REV, exercises, workouts: clone(seedWorkouts), sessions: {}, settings: clone(seedSettings) };
 }
 
 // Exercises that turned out to be the same machine: [from, to]
@@ -49,6 +49,7 @@ function mergeExercises(db) {
 // new fields (per, repUnit, rest, fixed...) are taken from the seed. The old A-D are kept in db.archive.
 // Bump when guides.js cues change and should replace the saved one-line cues (once)
 const GUIDE_REV = 1;
+const NAME_REV = 1; // 1: exercise names in Title Case (seed exercises only; custom ones untouched)
 const PATCH = ["name", "type", "cue", "per", "repUnit", "repStep", "rest", "fixed", "wstep"];
 function applyProgram(db) {
   if ((db.program || 1) >= PROGRAM_VERSION) return;
@@ -77,6 +78,10 @@ function migrate(db) {
   if ((db.guideRev || 0) < GUIDE_REV) {
     for (const [id, g] of Object.entries(GUIDES)) if (db.exercises[id]) db.exercises[id].cue = g.cue;
     db.guideRev = GUIDE_REV;
+  }
+  if ((db.nameRev || 0) < NAME_REV) {
+    for (const [id, e] of Object.entries({ ...seedExercises, ...extraExercises })) if (db.exercises[id]) db.exercises[id].name = e.name;
+    db.nameRev = NAME_REV;
   }
   return db;
 }
