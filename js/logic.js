@@ -138,11 +138,19 @@ export function itemState(session, item) {
   return e;
 }
 
+// The exercises of one session: the workout's items, with today-only swaps (session.swaps: original id -> new id)
+// and today-only additions (session.extra) applied. The program itself is never changed by these.
+export function sessionItems(w, session) {
+  if (!session || (!session.swaps && !session.extra)) return w.items;
+  const sw = session.swaps || {};
+  return [...w.items.map((it) => (sw[it.ex] ? { ...it, ex: sw[it.ex], today: true } : it)), ...(session.extra || [])];
+}
+
 // Close the session: copy each exercise's result to exercise.last
 export function finishSession(db, session) {
   session.finishedAt = new Date().toISOString();
   const w = db.workouts[session.workout];
-  for (const item of w.items) {
+  for (const item of sessionItems(w, session)) {
     const e = session.entries[item.ex];
     if (!e || !e.sets.length) continue;
     const ex = db.exercises[item.ex];

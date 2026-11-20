@@ -37,6 +37,7 @@ function session() {
   return s && s.workout === ui.letter ? s : null;
 }
 function workout() { return db.workouts[ui.letter]; }
+const items = () => L.sessionItems(workout(), session()); // today's exercises (program + today-only swaps/additions)
 
 function pickLetter() {
   const open = L.openSession(db);
@@ -45,7 +46,7 @@ function pickLetter() {
 
 function firstOpenItem() {
   const s = session();
-  return workout().items.find((it) => !["done", "skipped"].includes(L.itemState(s, it).status)) || null;
+  return items().find((it) => !["done", "skipped"].includes(L.itemState(s, it).status)) || null;
 }
 
 function setActive(exId) {
@@ -120,12 +121,12 @@ function drivesBar() {
 
 function today() {
   const s = session();
-  const w = workout();
-  if (!ui.active || (ui.active !== WARM && !w.items.some((i) => i.ex === ui.active))) {
+  const w = workout(), its = items();
+  if (!ui.active || (ui.active !== WARM && !its.some((i) => i.ex === ui.active))) {
     const fresh = !s || !!s.warmStart || (!s.warmup && !Object.keys(s.entries).length);
     setActive(fresh ? WARM : firstOpenItem()?.ex || null);
   }
-  const doneCount = w.items.filter((it) => ["done", "skipped"].includes(L.itemState(s, it).status)).length;
+  const doneCount = its.filter((it) => ["done", "skipped"].includes(L.itemState(s, it).status)).length;
 
   const warm = s?.warmup;
   const warming = !!s?.warmStart;
@@ -136,7 +137,7 @@ function today() {
   const wIc = wActive ? I.cur : warm ? I.check : I.page("var(--ic-page)");
   const rows = [`<button class="row ${warm ? "done" : "todo"} ${wActive ? "active" : ""}" data-act="warmup">
       <span class="ic">${wIc}</span><span>Warm-up 5–10 min</span><span>${wInfo}</span><span>${warm ? "1/1" : "0/1"}</span></button>`];
-  w.items.forEach((it, i) => {
+  its.forEach((it, i) => {
     const ex = db.exercises[it.ex];
     const st = L.itemState(s, it);
     const isActive = it.ex === ui.active;
@@ -147,10 +148,10 @@ function today() {
     } else if (st.status === "skipped") { cls = "skipped"; ic = I.skip; info = "skipped"; }
     if (isActive) { cls += " active"; if (st.status === "todo") ic = I.cur; }
     rows.push(`<button class="row ${cls} ${i % 2 ? "" : "alt"}" data-act="pick" data-v="${it.ex}">
-      <span class="ic">${ic}</span><span class="nm">${esc(ex.name)}${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}</span><span>${esc(info)}</span><span>${st.sets.length}/${it.sets}</span></button>`);
+      <span class="ic">${ic}</span><span class="nm">${esc(ex.name)}${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}${it.today ? '<i class="tag">today</i>' : ""}</span><span>${esc(info)}</span><span>${st.sets.length}/${it.sets}</span></button>`);
   });
 
-  const allClosed = doneCount === w.items.length;
+  const allClosed = doneCount === its.length;
   const fin = allClosed || s ? `<button class="btn finish ${allClosed ? "primary" : ""}" data-act="finish">${allClosed ? "Finish workout " + ui.letter : "Finish workout early"}</button>` : "";
   const dt = ui.active === WARM ? warmDetail() : ui.active ? detail() : { top: "", info: "" };
   // Phone sits in a pouch, only the top ~4/7 of the screen is reachable: controls first, reading next, the list last.
@@ -162,7 +163,7 @@ function today() {
     <div class="panel">
       <div class="thead"><span></span><span>Name</span><span>Today</span><span>Sets</span></div>
       ${rows.join("")}
-      <div class="status">${doneCount} / ${w.items.length} exercises done${s ? "" : " · not started"}</div>
+      <div class="status">${doneCount} / ${its.length} exercises done${s ? "" : " · not started"}</div>
     </div>
     ${allClosed ? "" : fin}`;
 }
@@ -177,7 +178,7 @@ function exhead(title, sub) {
 function fkeys() {
   return `<div class="fkeys">
       <button class="btn" data-act="guide">F3 Guide</button>
-      <button class="btn" data-act="focusnote">F4 Note</button>
+      <button class="btn" data-act="addtoday">F4 Add</button>
       <button class="btn" data-act="rest">F5 Timer</button>
       <button class="btn" data-act="swap">F6 Swap</button>
       <button class="btn" data-act="skip">F8 Skip</button>
@@ -209,7 +210,7 @@ function warmDetail() {
 
 function detail() {
   const w = workout();
-  const item = w.items.find((i) => i.ex === ui.active);
+  const item = items().find((i) => i.ex === ui.active);
   const ex = db.exercises[item.ex];
   const s = session();
   const st = L.itemState(s, item);
@@ -368,7 +369,7 @@ const act = {
   letter: (v) => { ui.letter = v; setActive(null); },
   pick: (v) => { setActive(v); },
   nav: (v) => {
-    const order = [WARM, ...workout().items.map((i) => i.ex)];
+    const order = [WARM, ...items().map((i) => i.ex)];
     const i = Math.max(0, order.indexOf(ui.active)) + (+v);
     setActive(order[Math.min(order.length - 1, Math.max(0, i))]);
   },
@@ -386,7 +387,7 @@ const act = {
   dec: (f) => bump(f, -1),
   log: () => {
     const s = ensureSession(); if (!s) return;
-    const item = workout().items.find((i) => i.ex === ui.active);
+    const item = items().find((i) => i.ex === ui.active);
     const ex = db.exercises[item.ex];
     const d = draftFor(item);
     const e = L.entryFor(s, item.ex);
@@ -410,16 +411,41 @@ const act = {
   },
   swap: () => {
     if (!ui.active || ui.active === WARM) return "norender";
-    const w = workout();
-    const opts = Object.entries(db.exercises).filter(([id]) => !w.items.some((i) => i.ex === id))
+    const s = session(), cur = db.exercises[ui.active];
+    const logged = s && s.entries[ui.active] ? s.entries[ui.active].sets.length : 0;
+    if (logged) { ui.dialog = { title: "Swap " + cur.name, body: `<p>${logged} ${logged === 1 ? "set is" : "sets are"} already logged for it today. Tap “Undo last” until none are left, then swap. Or skip it (F8).</p>` }; return; }
+    const taken = items().map((i) => i.ex);
+    const opts = Object.entries(db.exercises).filter(([id]) => !taken.includes(id))
       .map(([id, e]) => `<button class="btn wide" data-act="doswap" data-v="${id}">${esc(e.name)}</button>`).join("");
-    ui.dialog = { title: `Swap ${db.exercises[ui.active].name} for…`, body: `<p class="small">Changes it in workout ${ui.letter} from now on.</p>${opts}` };
+    ui.dialog = { title: `Swap ${cur.name} for…`, ok: false, body: `<p class="small">Today only. The program stays as it is.</p>${opts}<button class="btn wide" data-act="close">Cancel</button>` };
   },
   doswap: (v) => {
-    const w = workout();
-    const it = w.items.find((i) => i.ex === ui.active);
-    if (it) { it.ex = v; persist(); setActive(v); }
-    ui.dialog = null;
+    const s = ensureSession(); if (!s) { ui.dialog = null; return; }
+    const cur = ui.active, w = workout();
+    const xi = (s.extra || []).findIndex((i) => i.ex === cur);
+    if (xi >= 0) s.extra[xi] = { ...s.extra[xi], ex: v };
+    else {
+      const base = w.items.find((it) => ((s.swaps || {})[it.ex] || it.ex) === cur);
+      if (base) { s.swaps = s.swaps || {}; if (v === base.ex) delete s.swaps[base.ex]; else s.swaps[base.ex] = v; if (!Object.keys(s.swaps).length) delete s.swaps; }
+    }
+    if (s.entries[cur] && !s.entries[cur].sets.length) delete s.entries[cur];
+    persist(); setActive(v); ui.dialog = null;
+  },
+  addtoday: () => {
+    const taken = items().map((i) => i.ex);
+    const opts = Object.entries(db.exercises).filter(([id]) => !taken.includes(id))
+      .map(([id, e]) => `<button class="btn wide" data-act="addtodaynow" data-v="${id}">${esc(e.name)}</button>`).join("");
+    ui.dialog = { title: "Add for today", ok: false, body: `<p class="small">Added at the end of today's workout only. The program stays as it is.</p>${opts || "<p>All exercises are already in today's workout.</p>"}<button class="btn wide" data-act="close">Cancel</button>` };
+  },
+  addtodaynow: (id) => {
+    const s = ensureSession(); if (!s) { ui.dialog = null; return; }
+    const e = db.exercises[id];
+    let ref = null;
+    for (const x of Object.values(db.workouts)) { const f = x.items.find((i) => i.ex === id); if (f) { ref = f; break; } }
+    const min = ref ? ref.min : e.type === "timed" ? 20 : e.type === "bodyweight" ? 10 : 8;
+    const max = ref ? ref.max : e.type === "timed" ? min : e.type === "bodyweight" ? 12 : 10;
+    (s.extra = s.extra || []).push({ ex: id, sets: ref ? ref.sets : 3, min, max, today: true });
+    persist(); setActive(id); ui.dialog = null;
   },
   guide: () => {
     if (!ui.active || ui.active === WARM) return "norender";
@@ -573,7 +599,7 @@ const act = {
   finish: () => {
     const s = session(); if (!s) return;
     const w = workout();
-    const st = w.items.map((it) => L.itemState(s, it).status);
+    const st = items().map((it) => L.itemState(s, it).status);
     const done = st.filter((x) => x === "done").length, skipped = st.filter((x) => x === "skipped").length, open = st.length - done - skipped;
     const parts = [`${done} of ${st.length} exercises done`]; if (skipped) parts.push(`${skipped} skipped`); if (open) parts.push(`${open} not done`);
     ui.dialog = { title: `Finish workout ${ui.letter}?`, ok: false, body: `<p>${parts.join(", ")}.</p>
@@ -609,7 +635,7 @@ const act = {
 };
 
 function bump(field, dir) {
-  const item = workout().items.find((i) => i.ex === ui.active);
+  const item = items().find((i) => i.ex === ui.active);
   const ex = db.exercises[item.ex];
   const d = draftFor(item);
   if (field === "kg") d.kg = L.stepWeight(ex, d.kg || 0, dir);
