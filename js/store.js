@@ -2,7 +2,7 @@
 // Later: same shape in Firestore (users/{uid}/exercises, workouts, sessions, settings),
 // so only this file changes when we switch.
 import { GUIDES } from "./guides.js";
-import { SEED_VERSION, PROGRAM_VERSION, seedExercises, seedWorkouts, seedSettings } from "./seed.js";
+import { SEED_VERSION, PROGRAM_VERSION, seedExercises, extraExercises, seedWorkouts, seedSettings } from "./seed.js";
 
 const KEY = "gymlog.v1";
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -19,7 +19,7 @@ const baseline = (ex, v) => ({ date: new Date().toISOString(), kg: ex.type === "
 
 function fresh() {
   const exercises = {};
-  for (const id of Object.keys(seedExercises)) exercises[id] = newEx(seedExercises[id], id);
+  for (const [id, e] of Object.entries({ ...seedExercises, ...extraExercises })) exercises[id] = newEx(e, id);
   return { seed: SEED_VERSION, program: PROGRAM_VERSION, guideRev: GUIDE_REV, exercises, workouts: clone(seedWorkouts), sessions: {}, settings: clone(seedSettings) };
 }
 
@@ -68,7 +68,7 @@ function applyProgram(db) {
 function migrate(db) {
   mergeExercises(db);
   applyProgram(db);
-  for (const [id, e] of Object.entries(seedExercises)) {
+  for (const [id, e] of Object.entries({ ...seedExercises, ...extraExercises })) {
     if (!db.exercises[id]) db.exercises[id] = newEx(e, id);
     else if (e.scale && !("scale" in db.exercises[id])) db.exercises[id].scale = clone(e.scale);
     else if (e.scale && db.exercises[id].scale && db.exercises[id].scale.unit !== e.scale.unit

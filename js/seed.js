@@ -41,6 +41,34 @@ export const seedExercises = {
   plank:            { name: "Plank", type: "timed", fixed: true, step: 5, wstep: 2.5, cue: "Forearms and toes, body in a straight line. Brace and breathe. Add weight once the full time is easy." },
 };
 
+// Extra exercises to slot into the program later (how-tos in guides.js, rest times from the user's "Additional Exercise How-Tos").
+// Not in any workout; they are added to saved data on load and can be put into a workout via Programs + Add exercise or F6 Swap.
+// rest: 2-3 min -> 150, 90-120 s -> 105, 60-90 s -> 75, 45-60 s -> 50
+export const extraExercises = {
+  back_squat:           { name: "Barbell Back Squat", type: "weight", step: 2.5, rest: 150 },
+  bench_press:          { name: "Barbell Bench Press", type: "weight", step: 2.5, rest: 150 },
+  overhead_press:       { name: "Barbell Overhead Press", type: "weight", step: 2.5, rest: 150 },
+  barbell_rdl:          { name: "Barbell Romanian Deadlift", type: "weight", step: 2.5, rest: 150 },
+  trap_bar_deadlift:    { name: "Trap Bar Deadlift", type: "weight", step: 5, rest: 150 },
+  chin_up:              { name: "Chin-Up", type: "bodyweight", step: 2.5, rest: 150 },
+  weighted_pull_up:     { name: "Weighted Pull-Up", type: "bodyweight", step: 2.5, rest: 150 },
+  weighted_dips:        { name: "Weighted Dips", type: "bodyweight", step: 2.5, rest: 150 },
+  push_up:              { name: "Push-Up", type: "bodyweight", step: 2.5, rest: 75 },
+  inverted_row:         { name: "Inverted Row", type: "bodyweight", step: 2.5, rest: 105 },
+  ab_wheel:             { name: "Ab Wheel Rollout", type: "bodyweight", step: 2.5, rest: 75 },
+  back_extension:       { name: "Back Extension", type: "bodyweight", step: 2.5, rest: 75 },
+  cable_fly:            { name: "Cable Chest Fly", type: "weight", step: 2.5, rest: 75 },
+  one_arm_cable_row:    { name: "One-Arm Cable Row", type: "weight", step: 2.5, per: "side", rest: 75 },
+  overhead_triceps_ext: { name: "Overhead Cable Triceps Extension", type: "weight", step: 2.5, rest: 75 },
+  incline_db_curl:      { name: "Incline DB Curl", type: "weight", step: 1, per: "hand", rest: 75 },
+  hammer_curl:          { name: "Hammer Curl", type: "weight", step: 1, per: "hand", rest: 75 },
+  cable_pull_through:   { name: "Cable Pull-Through", type: "weight", step: 2.5, rest: 75 },
+  cable_crunch:         { name: "Cable Crunch", type: "weight", step: 2.5, rest: 75 },
+  pallof_press:         { name: "Pallof Press", type: "weight", step: 2.5, per: "side", rest: 50 },
+  db_reverse_lunge:     { name: "DB Reverse Lunge", type: "weight", step: 1, per: "leg", rest: 105 },
+  db_step_up:           { name: "DB Step-Up", type: "weight", step: 1, per: "leg", rest: 105 },
+};
+
 const it = (id, sets, min, max, extra = {}) => ({ ex: id, sets, min, max, ...extra });
 
 export const seedWorkouts = {
