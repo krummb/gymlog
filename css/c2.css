@@ -189,3 +189,5 @@ footer .drives .drive { height:32px; }
 .nmcell { display:flex; flex-direction:column; min-width:0; padding:2px 0; }
 .restbtn { background:none; border:0; padding:3px 0; min-height:24px; text-align:left; color:var(--grey); font-size:11px; }
 .restbtn.custom { color:var(--teal); font-weight:bold; }
+
+.m-bad { color:var(--red, #c33); }

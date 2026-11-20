@@ -1,6 +1,7 @@
 import { load, save, exportJson, importJson } from "./store.js";
 import * as L from "./logic.js";
 import { GUIDES } from "./guides.js";
+import * as Sync from "./sync.js";
 
 let db = load();
 const MODES = ["auto", "light", "dark"];
@@ -16,7 +17,7 @@ const ui = { overUntil: 0, screen: "today", letter: null, active: null, draft: n
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const persist = () => save(db);
+const persist = () => { save(db); Sync.touch(db); };
 
 // ---------- icons (small coloured strokes, Commander style) ----------
 const svg = (d, c, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 20 20" fill="none" style="stroke:${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -291,6 +292,17 @@ function programs() {
   }).join("") + `<p class="small">Tap “rest” under a name to set the rest time for that exercise (it applies wherever the exercise is used; default is set in Settings). Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises: “60s” is a fixed hold time (plank); “20s+” is a starting time, then the target is your last best + the step. SS = superset with the next row.</p>`;
 }
 
+function syncPanel() {
+  const c = Sync.config(), on = Sync.configured();
+  const when = c.last ? new Date(c.last).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" }) : null;
+  const status = Sync.busyNow() ? "Syncing…" : c.err ? `<span class="m-bad">Not synced: ${esc(c.err)}</span>` : on ? (c.pending ? "Waiting to sync (30 s after your last change, or when online)" : `Synced ${when}`) : "Off";
+  return `<p class="small">Copies your results to a private GitHub repo (gymlog.json + a readable log.md) so they can be read without exporting. Needs a repo and a fine-grained token with Contents: read and write on that repo only. The token stays on this phone and is not part of backups.</p>
+    <div class="noterow"><label for="syncrepo">Repo</label><input id="syncrepo" value="${esc(c.repo)}" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+    <div class="noterow"><label for="synctoken">Token</label><input id="synctoken" type="password" value="" placeholder="${on ? "saved (paste to replace)" : "github_pat_…"}" autocomplete="off"></div>
+    <p class="small">${status}</p>
+    <button class="btn" data-act="syncnow">Sync now</button>${on ? '<button class="btn" data-act="syncoff">Remove token</button>' : ""}`;
+}
+
 function settings() {
   return `<div class="panel"><div class="pathbar">▾ gym:\\settings</div><div class="detail">
     <div class="noterow"><label for="rest">Rest (s)</label><input id="rest" type="number" inputmode="numeric" value="${db.settings.restSec}"></div>
@@ -303,8 +315,10 @@ function settings() {
       return `<button class="srow" data-act="exdlg" data-ex="${id}"><span class="nm">${esc(e.name)}</span><span class="rt"><span class="m-wt">${esc(L.currentText(e))}</span> · ${mode}</span></button>`;
     }).join("")}</div>
     <button class="btn" data-act="exdlg" data-ex="">+ Add exercise…</button>
+    <div class="setlabel">Sync to GitHub</div>
+    ${syncPanel()}
     <div class="setlabel">Backup</div>
-    <p class="small">Data lives on this phone until we switch to Firestore. Export now and then to be safe.</p>
+    <p class="small">Data lives on this phone. Export now and then to be safe.</p>
     <button class="btn" data-act="export">Export backup (.json)</button>
     <button class="btn" data-act="import">Import backup…</button>
     <input type="file" id="importfile" accept="application/json" hidden>
@@ -550,6 +564,8 @@ const act = {
     if (v != null && m && +m[1] > 0 && (m[2] == null || +m[2] >= +m[1])) { it.min = +m[1]; it.max = m[2] == null ? +m[1] : +m[2]; persist(); }
     else if (v != null) alert("Use the form 8-10 (or a single number).");
   },
+  syncnow: () => { if (!Sync.configured()) { alert("Paste the token first."); return; } Sync.flush(db, true); },
+  syncoff: () => { if (confirm("Remove the token from this phone? Nothing in the repo is deleted.")) Sync.setConfig({ token: "", pending: false, err: null }); },
   close: () => { ui.dialog = null; },
   noop: () => "norender",
   focusnote: () => { const n = $("#xnote"); if (n) { n.focus(); n.select(); } return "norender"; },
@@ -566,7 +582,7 @@ const act = {
   },
   finishnow: () => {
     const s = session(); if (!s) { ui.dialog = null; return; }
-    L.finishSession(db, s); persist();
+    L.finishSession(db, s); persist(); Sync.flush(db);
     ui.letter = L.nextLetter(db); setActive(null); ui.restEnd = null;
     ui.dialog = { title: "Workout logged", body: `<p>Nice. Next time: workout ${ui.letter} · ${esc(workout().name)}.</p>`, ok: true };
   },
@@ -620,10 +636,12 @@ document.addEventListener("change", (e) => {
   }
   if (t.id === "xnote") { db.exercises[t.dataset.ex].note = t.value; persist(); }
   if (t.id === "gnote") { db.settings.globalNote = t.value; persist(); }
+  if (t.id === "syncrepo") { const v = t.value.trim().replace(/^https?:\/\/github.com\//, "").replace(/\.git$/, ""); Sync.setConfig({ repo: v, hash: {} }); }
+  if (t.id === "synctoken" && t.value.trim()) { Sync.setConfig({ token: t.value.trim(), err: null, hash: {}, pending: true }); t.value = ""; Sync.flush(db, true); }
   if (t.id === "rest") { const n = parseInt(t.value, 10); if (n > 0) { db.settings.restSec = n; persist(); } }
   if (t.id === "importfile" && t.files[0]) {
     t.files[0].text().then((txt) => {
-      try { db = importJson(txt); pickLetter(); setActive(null); render(); alert("Backup imported."); }
+      try { db = importJson(txt); Sync.touch(db); pickLetter(); setActive(null); render(); alert("Backup imported."); }
       catch (err) { alert("Import failed: " + err.message); }
     });
   }
@@ -639,7 +657,11 @@ document.addEventListener("pointerdown", (e) => {
 });
 ["pointerup", "pointercancel", "pointerleave"].forEach((t) => document.addEventListener(t, () => clearTimeout(holdT)));
 
+Sync.setListener(() => { if (ui.screen === "settings" && !ui.dialog) render(); });
+addEventListener("online", () => { if (Sync.config().pending) Sync.flush(db); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && Sync.config().pending) Sync.flush(db); });
 pickLetter();
 render();
+if (Sync.configured() && Sync.config().pending) Sync.flush(db);
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});

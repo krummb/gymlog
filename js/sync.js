@@ -1,0 +1,100 @@
+// Optional one-way backup to a private GitHub repo, so the data can be read without exporting from the phone.
+// Writes two files: gymlog.json (everything) and log.md (readable: current weights + finished sessions, newest first).
+// Settings (repo, token) live in their own localStorage key, never inside the exported data.
+const KEY = "gymlog.sync.v1";
+const DEBOUNCE_MS = 30000;
+let timer = null, busy = false, onChange = () => {};
+
+const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
+const write = (c) => { try { localStorage.setItem(KEY, JSON.stringify(c)); } catch (e) {} };
+
+export const config = () => ({ repo: "krummb/gymlog-data", branch: "main", token: "", pending: false, last: null, err: null, hash: {}, ...read() });
+export const configured = () => { const c = config(); return !!(c.token && c.repo); };
+export function setConfig(patch) { write({ ...config(), ...patch }); onChange(); }
+export const setListener = (fn) => { onChange = fn; };
+
+const b64 = (s) => { const b = new TextEncoder().encode(s); let t = ""; for (let i = 0; i < b.length; i += 0x8000) t += String.fromCharCode(...b.subarray(i, i + 0x8000)); return btoa(t); };
+const hashOf = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return String(h) + ":" + s.length; };
+const fmtDate = (iso) => iso.slice(0, 10);
+
+function setsText(ex, sets) {
+  if (!sets.length) return "-";
+  const unit = ex.type === "timed" ? "s" : ex.repUnit || "";
+  if (ex.type === "timed") return sets.map((s) => (s.kg ? `${s.reps} s (+${s.kg} kg)` : `${s.reps} s`)).join(", ");
+  const groups = [];
+  for (const s of sets) {
+    const g = groups[groups.length - 1];
+    if (g && g.kg === s.kg) g.reps.push(s.reps); else groups.push({ kg: s.kg, reps: [s.reps] });
+  }
+  return groups.map((g) => `${g.kg ? g.kg + " kg" : "BW"} × ${g.reps.join(", ")}${unit && unit !== "s" ? " " + unit : ""}`).join(" | ");
+}
+
+export function buildLog(db) {
+  const L = [`# GymLog results`, ``, `Generated ${new Date().toISOString()} · kg · weights for dumbbells are per hand · reps listed per set in order`, ``];
+  L.push(`## Current exercise weights`, ``);
+  for (const e of Object.values(db.exercises)) {
+    if (!e.last) continue;
+    const w = e.last.kg != null ? (e.type === "timed" ? `${e.last.top} s` : `${e.last.kg} kg`) : "BW";
+    L.push(`- ${e.name}: ${w}${e.last.baseline ? " (typed starting weight)" : ` (${e.last.date ? fmtDate(e.last.date) : "?"})`}`);
+  }
+  L.push(``, `## Sessions (newest first)`, ``);
+  const sessions = Object.values(db.sessions).sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || ""));
+  for (const s of sessions) {
+    const w = db.workouts[s.workout];
+    const mins = s.finishedAt ? Math.round((new Date(s.finishedAt) - new Date(s.startedAt)) / 60000) : null;
+    L.push(`### ${fmtDate(s.startedAt)} · Workout ${s.workout}${w ? " · " + w.name : ""}${mins != null ? ` · ${mins} min` : " · in progress / unfinished"}`);
+    if (s.warmup) L.push(`- Warm-up: ${s.warmup === true ? "done" : s.warmup}${s.warmSec ? ` (${Math.round(s.warmSec / 60)} min)` : ""}`);
+    const order = w ? w.items.map((i) => i.ex).filter((id) => s.entries[id]) : [];
+    for (const id of Object.keys(s.entries)) if (!order.includes(id)) order.push(id);
+    for (const id of order) {
+      const en = s.entries[id], ex = db.exercises[id];
+      if (!ex) continue;
+      const body = en.status === "skipped" ? "skipped" : setsText(ex, en.sets || []);
+      L.push(`- ${ex.name}: ${body}`);
+    }
+    L.push(``);
+  }
+  return L.join("\n");
+}
+
+async function put(c, path, text, message) {
+  const url = `https://api.github.com/repos/${c.repo}/contents/${path}`;
+  const h = { Authorization: `Bearer ${c.token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+  let sha;
+  const g = await fetch(`${url}?ref=${encodeURIComponent(c.branch)}`, { headers: h, cache: "no-store" });
+  if (g.ok) sha = (await g.json()).sha;
+  else if (g.status !== 404) throw new Error(g.status === 401 || g.status === 403 ? "Token refused (check it and its repo access)" : `GitHub said ${g.status}`);
+  const r = await fetch(url, { method: "PUT", headers: { ...h, "Content-Type": "application/json" }, body: JSON.stringify({ message, content: b64(text), branch: c.branch, ...(sha ? { sha } : {}) }) });
+  if (!r.ok) throw new Error(r.status === 404 ? "Repo not found (create it first, private, and give the token access)" : r.status === 401 || r.status === 403 ? "Token refused (needs Contents: read and write)" : `GitHub said ${r.status}`);
+}
+
+// Push now (skips files that did not change since the last successful push)
+export async function flush(db, force = false) {
+  clearTimeout(timer); timer = null;
+  const c = config();
+  if (!c.token || !c.repo || busy) return;
+  if (!navigator.onLine) { setConfig({ pending: true }); return; }
+  busy = true; onChange();
+  try {
+    const files = { "gymlog.json": JSON.stringify(db, null, 2), "log.md": buildLog(db) };
+    const hash = { ...c.hash };
+    for (const [path, text] of Object.entries(files)) {
+      const hh = hashOf(text);
+      if (!force && hash[path] === hh) continue;
+      await put(c, path, text, `GymLog ${new Date().toISOString().slice(0, 16).replace("T", " ")}`);
+      hash[path] = hh;
+    }
+    busy = false; setConfig({ pending: false, last: new Date().toISOString(), err: null, hash });
+  } catch (e) {
+    busy = false; setConfig({ pending: true, err: String(e.message || e) });
+  }
+}
+
+// Call after any change to the data: pushes 30 s after the last change
+export function touch(db) {
+  if (!configured()) return;
+  const c = config(); if (!c.pending) setConfig({ pending: true });
+  clearTimeout(timer); timer = setTimeout(() => flush(db), DEBOUNCE_MS);
+}
+
+export const busyNow = () => busy;
