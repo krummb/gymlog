@@ -295,7 +295,7 @@ function programs() {
 function syncPanel() {
   const c = Sync.config(), on = Sync.configured();
   const when = c.last ? new Date(c.last).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" }) : null;
-  const status = Sync.busyNow() ? "Syncing…" : c.err ? `<span class="m-bad">Not synced: ${esc(c.err)}</span>` : on ? (c.pending ? "Waiting to sync (30 s after your last change, or when online)" : `Synced ${when}`) : "Off";
+  const status = Sync.busyNow() ? "Syncing…" : c.err ? `<span class="m-bad">Not synced: ${esc(c.err)}</span>` : on ? (c.pending ? "Changes not sent yet (sent when you finish a workout or leave the app)" : `Synced ${when}`) : "Off";
   return `<p class="small">Copies your results to a private GitHub repo (gymlog.json + a readable log.md) so they can be read without exporting. Needs a repo and a fine-grained token with Contents: read and write on that repo only. The token stays on this phone and is not part of backups.</p>
     <div class="noterow"><label for="syncrepo">Repo</label><input id="syncrepo" value="${esc(c.repo)}" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
     <div class="noterow"><label for="synctoken">Token</label><input id="synctoken" type="password" value="" placeholder="${on ? "saved (paste to replace)" : "github_pat_…"}" autocomplete="off"></div>

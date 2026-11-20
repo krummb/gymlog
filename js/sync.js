@@ -2,8 +2,7 @@
 // Writes two files: gymlog.json (everything) and log.md (readable: current weights + finished sessions, newest first).
 // Settings (repo, token) live in their own localStorage key, never inside the exported data.
 const KEY = "gymlog.sync.v1";
-const DEBOUNCE_MS = 30000;
-let timer = null, busy = false, onChange = () => {};
+let busy = false, onChange = () => {};
 
 const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
 const write = (c) => { try { localStorage.setItem(KEY, JSON.stringify(c)); } catch (e) {} };
@@ -70,7 +69,6 @@ async function put(c, path, text, message) {
 
 // Push now (skips files that did not change since the last successful push)
 export async function flush(db, force = false) {
-  clearTimeout(timer); timer = null;
   const c = config();
   if (!c.token || !c.repo || busy) return;
   if (!navigator.onLine) { setConfig({ pending: true }); return; }
@@ -90,11 +88,11 @@ export async function flush(db, force = false) {
   }
 }
 
-// Call after any change to the data: pushes 30 s after the last change
-export function touch(db) {
+// Call after any change to the data: only marks it as unsent. The push happens on finishing a workout, when the app is left,
+// when the phone is back online, on opening the app, or via Sync now (keeps the commit history short).
+export function touch() {
   if (!configured()) return;
-  const c = config(); if (!c.pending) setConfig({ pending: true });
-  clearTimeout(timer); timer = setTimeout(() => flush(db), DEBOUNCE_MS);
+  if (!config().pending) setConfig({ pending: true });
 }
 
 export const busyNow = () => busy;
