@@ -258,7 +258,7 @@ function detail() {
     <div class="panel">
       <div class="detail">
         <div class="dhead">
-          <button class="img gwrap" data-act="guide" aria-label="Open position guide"><span class="ph">IMG<br>guide</span><img class="gimg" src="img/${item.ex}-1.jpg" alt="" hidden></button>
+          <button class="img gwrap" data-act="guide" aria-label="Open position guide"><span class="ph">IMG<br>guide</span><img class="gimg" src="img/${item.ex}-1.webp" alt="" hidden></button>
           <div class="dinfo"><div class="tgt">${esc(tgt)}</div><div class="last">${esc(L.lastText(ex))}</div><div class="cue">${esc(ex.cue)}</div></div>
         </div>
         ${logged}
@@ -411,7 +411,7 @@ const act = {
     if (!ui.active || ui.active === WARM) return "norender";
     const ex = db.exercises[ui.active], g = GUIDES[ui.active];
     const per = L.perText(ex);
-    const imgs = [1, 2].map((n) => `<img class="gimg" src="img/${ui.active}-${n}.jpg" alt="${esc(ex.name)}, picture ${n}" hidden>`).join("");
+    const imgs = [1, 2].map((n) => `<img class="gimg" src="img/${ui.active}-${n}.webp" alt="${esc(ex.name)}, picture ${n}" hidden>`).join("");
     const how = g ? `
       <p class="gcue">${esc(g.cue)}</p>
       <div class="glbl">How</div>

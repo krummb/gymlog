@@ -1,5 +1,5 @@
 // How-to content for the info sheet (F3), from the user's "Exercise How-Tos" PDF (2026-11-19).
-// Keyed by exercise id. Images (optional): img/<id>-1.jpg and img/<id>-2.jpg; missing images are skipped.
+// Keyed by exercise id. Images (optional): img/<id>-1.webp and img/<id>-2.webp; missing images are skipped.
 export const GUIDES = {
  "db_bench": {
   "cue": "Shoulder blades pinched back and down. Lower to chest level, press up over your shoulders. Feet planted.",
