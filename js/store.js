@@ -50,7 +50,8 @@ function mergeExercises(db) {
 // Bump when guides.js cues change and should replace the saved one-line cues (once)
 const GUIDE_REV = 1;
 const REST_REV = 1; // 1: program exercises get the rest times from the PT how-tos; dumbbell exercises get the dumbbell rack scale (only where nothing is set)
-const PROG_REV = 1; // 1: Low B uses the Prone Cable Leg Curl instead of the machine Leg Curl (2026-11-23)
+const PROG_REV = 2; // 2: PT review 2026-11-23: deadlift 3 sets, farmer's carry 40-50 m, Glute Press merged into the old glute_bridge entry (keeps its 46 kg history), shorter leg-curl cue
+// 1: Low B uses the Prone Cable Leg Curl instead of the machine Leg Curl (2026-11-23)
 const NAME_REV = 2; // 2: also older built-in exercises (chest press, leg press …) in Title Case // 1: exercise names in Title Case (seed exercises only; custom ones untouched)
 const PATCH = ["name", "type", "cue", "per", "repUnit", "repStep", "rest", "fixed", "wstep"];
 function applyProgram(db) {
@@ -97,9 +98,22 @@ function migrate(db) {
     if (db.settings.prepSec == null) db.settings.prepSec = 10;
     db.restRev = REST_REV;
   }
-  if ((db.progRev || 0) < PROG_REV) {
+  if ((db.progRev || 0) < 1) {
     const d = db.workouts && db.workouts.D;
     if (d) d.items = d.items.map((i) => (i.ex === "ham_curl" ? { ex: "prone_leg_curl", sets: 3, min: 12, max: 15 } : i));
+    db.progRev = 1;
+  }
+  if ((db.progRev || 0) < 2) {
+    const d = db.workouts && db.workouts.D;
+    if (d) d.items = d.items.map((i) => i.ex === "deadlift" && i.sets === 2 ? { ...i, sets: 3 } : i.ex === "farmers_carry" && i.min === 30 && i.max === 30 ? { ...i, min: 40, max: 50 } : i);
+    const pc = db.exercises.prone_leg_curl;
+    if (pc && /Start light, about 10 kg/.test(pc.cue || "")) pc.cue = seedExercises.prone_leg_curl.cue;
+    const gp = db.exercises.glute_press, gb = db.exercises.glute_bridge;
+    const usedGp = Object.values(db.sessions).some((x) => x.entries.glute_press) || Object.values(db.workouts).some((w) => w.items.some((it) => it.ex === "glute_press"));
+    if (gb && gp && !gp.last && !usedGp) {
+      gb.type = "weight"; gb.name = gp.name; gb.cue = gp.cue; gb.rest = gb.rest || gp.rest;
+      delete db.exercises.glute_press;
+    } else if (gp && !gb) { db.exercises.glute_bridge = gp; delete db.exercises.glute_press; }
     db.progRev = PROG_REV;
   }
   return db;

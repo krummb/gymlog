@@ -456,7 +456,7 @@ export const GUIDES = {
   "mistakes": "pushing off the back leg; box too high; leaning forward"
  },
  "prone_leg_curl": {
-  "cue": "Lie face down on a flat bench, press your hips into it and brace your abs so your lower back stays flat. Curl one heel toward your glute. Start light, about 10 kg per leg, for 3 × 12-15 per leg.",
+  "cue": "Face down, hips pressed into the bench, abs braced. Curl one heel to your glute, lower slowly. (Per leg.)",
   "steps": [
    "Set the cable pulley at its lowest point and strap the ankle cuff on one ankle. Place the bench so the cable pulls straight along the line of your leg.",
    "Lie face down with your knees just past the end of the bench edge. Grip the bench ahead of you and press your hips down.",
