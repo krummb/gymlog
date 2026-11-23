@@ -306,9 +306,7 @@ function detail() {
   const alts = (ALTS[item.ex] || []).filter((id) => db.exercises[id] && !its.some((i) => i.ex === id)).slice(0, 2).map((id) => db.exercises[id].name);
   const hint = timed
     ? (ex.fixed ? `Hold ${item.min} s. Once it is easy, add weight with the + button.` : `Next time: beat your best by +${ex.step} s`)
-    : ex.type === "bodyweight" && !(t.kg > 0)
-      ? `Top of the range on every set (${item.max}) → add reps, weight or a new range yourself.`
-      : partner ? `Superset with ${db.exercises[partner.ex].name}: alternate sets.`
+    : partner ? `Superset with ${db.exercises[partner.ex].name}: alternate sets.`
       : alts.length ? `Alternative: ${alts.join(" or ")} (F6 Swap).` : "";
 
   const top = `
