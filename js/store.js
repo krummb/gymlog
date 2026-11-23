@@ -87,6 +87,7 @@ function migrate(db) {
     for (const [id, x] of Object.entries(db.exercises)) if (!x.custom && !seedExercises[id] && !extraExercises[id]) x.name = tc(x.name);
     db.nameRev = NAME_REV;
   }
+  for (const [id, e] of Object.entries({ ...seedExercises, ...extraExercises })) if (e.handKg && db.exercises[id]) db.exercises[id].handKg = true;
   if ((db.restRev || 0) < REST_REV) {
     for (const [id, e] of Object.entries({ ...seedExercises, ...extraExercises })) {
       const x = db.exercises[id]; if (!x) continue;

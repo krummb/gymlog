@@ -20,7 +20,9 @@ export const restFor = (db, ex) => ex.rest || db.settings.restSec;
 export const repStepOf = (ex) => (ex.type === "timed" ? ex.step : ex.repStep || 1);
 export const repCap = (ex) => (ex.type === "timed" ? "SECONDS" : ex.repUnit === "m" ? "METRES" : ex.repUnit ? ex.repUnit.toUpperCase() : "REPS");
 const PER = { hand: "per hand", side: "per side", leg: "per leg" };
-export const perText = (ex) => PER[ex.per] || "";
+// Weight per hand: dumbbell in each hand (per "hand", or handKg on per-leg exercises like split squats)
+export const perHand = (ex) => ex.per === "hand" || !!ex.handKg;
+export const perText = (ex) => (ex.handKg && ex.per && ex.per !== "hand" ? `weight per hand, reps ${PER[ex.per]}` : PER[ex.per] || "");
 // "8–10", "30 m", "8–10/leg": the rep range of one item
 export function rangeText(ex, item, short = false) {
   const r = item.min === item.max ? `${item.min}` : `${item.min}–${item.max}`;

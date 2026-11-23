@@ -89,13 +89,14 @@ function render() {
     <main class="body">${today_ ? today() : ui.screen === "programs" ? programs() : ui.screen === "exercises" ? exercisesScreen() : settings()}</main>
     <footer>
       ${today_ ? fkeys() : ""}
+
+      ${today_ ? drivesBar() : ""}
       <nav class="menu">
         <button data-act="screen" data-v="today" class="${ui.screen === "today" ? "on" : ""}"><u>T</u>oday</button>
         <button data-act="screen" data-v="programs" class="${ui.screen === "programs" ? "on" : ""}"><u>P</u>rograms</button>
         <button data-act="screen" data-v="exercises" class="${ui.screen === "exercises" ? "on" : ""}"><u>E</u>xercises</button>
         <button data-act="screen" data-v="settings" class="${ui.screen === "settings" ? "on" : ""}"><u>S</u>ettings</button>
       </nav>
-      ${today_ ? drivesBar() : ""}
     </footer>
     ${ui.dialog ? dialog() : ""}
     ${ui.live ? liveView() : ""}`;
@@ -277,7 +278,7 @@ function detail() {
   const setNo = st.sets.length + 1;
   const finished = st.status === "done" || st.status === "skipped";
 
-  const hand = ex.per === "hand" ? "/hand" : "";
+  const hand = L.perHand(ex) ? "/hand" : "";
   const tgt = timed
     ? (ex.fixed ? `Today: ${item.sets} × ${t.reps} s${t.kg ? " +" + L.fmtKg(t.kg) + " " + L.unitOf(ex) : ""}`
       : t.first ? `First time: start at ${t.reps} s` : `Today: ${item.sets} × ${t.reps} s ↑`)
@@ -293,7 +294,7 @@ function detail() {
       <div class="val" style="color:${color}">${val}</div>
       <button class="btn sq" aria-label="More ${label}" data-act="inc" data-v="${field}">${I.plus}</button></div></div>`;
 
-  const u = L.unitOf(ex), perU = ex.per === "hand" ? "/hand" : "";
+  const u = L.unitOf(ex), perU = L.perHand(ex) ? "/hand" : "";
   const kgVal = d.kg == null || d.kg === 0
     ? (ex.type === "weight" ? `<b>0</b><i>${u}${perU}</i>` : timed ? `<i>+</i><b>0</b><i>${u}</i>` : `<b>BW</b>`)
     : `${ex.type === "weight" ? "" : "<i>+</i>"}<b>${L.fmtKg(d.kg)}</b><i>${u}${perU}</i>`;
@@ -655,7 +656,7 @@ const act = {
       : `<span class="altname">${esc(db.exercises[a].name)}</span>`).join("") : `<span class="small">none listed</span>`;
     const wdesc = ex.type === "timed" ? `step ${L.fmtKg(ex.step)} s` : ex.scale && JSON.stringify(ex.scale.values) === JSON.stringify(DB_SCALE.values) ? "dumbbell rack: 1–10 kg, then 12, 14 … 60 kg" : ex.scale && ex.scale.values && ex.scale.values.length ? `scale ${ex.scale.values.slice(0, 4).map(L.fmtKg).join(", ")} … ${L.fmtKg(ex.scale.values[ex.scale.values.length - 1])} ${L.unitOf(ex)}` : `step ${L.fmtKg(ex.step)} kg`;
     ui.dialog = { title: ex.name, sheet: true, ok: false, body: `
-      ${per ? `<p class="small">Weight and reps are logged ${esc(per)}.</p>` : ""}
+      ${per ? `<p class="small">${/^weight/.test(per) ? "Logged " + esc(per) : "Weight and reps are logged " + esc(per)}.</p>` : ""}
       ${how}
       <div class="glbl">Rest between sets</div>
       <div class="frow"><label for="sh_rest">Yours</label><input id="sh_rest" data-ex="${id}" type="text" inputmode="numeric" value="${fmtRest(L.restFor(db, ex))}"><span class="small">${ex.rest ? "" : "default"}</span></div>

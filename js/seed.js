@@ -23,7 +23,7 @@ export const seedExercises = {
   // Low A – Quads
   goblet_squat:     { name: "Goblet Squat", type: "weight", scale: DB_SCALE, rest: 105, step: 1, start: 12, cue: "Dumbbell held at your chest. Sit down between your heels, chest up, knees tracking over your toes." },
   db_rdl:           { name: "DB Romanian Deadlift", type: "weight", scale: DB_SCALE, rest: 105, step: 1, per: "hand", start: 10, cue: "Soft knees, hinge at the hips, dumbbells close to your legs. Flat back; stop around mid-shin." },
-  db_split_squat:   { name: "DB Split Squat", type: "weight", scale: DB_SCALE, rest: 90, step: 1, per: "leg", start: 6, cue: "Long stride, torso upright. Drop the back knee straight down, push through the front heel." },
+  db_split_squat:   { name: "DB Split Squat", handKg: true, type: "weight", scale: DB_SCALE, rest: 90, step: 1, per: "leg", start: 6, cue: "Long stride, torso upright. Drop the back knee straight down, push through the front heel." },
   calf_raise:       { name: "Calf Raise (Plate-Loaded)", type: "weight", rest: 75, step: 2.5, cue: "Balls of your feet on the plate. Rise high, pause, lower slowly all the way." },
   hanging_knee_raise:{ name: "Hanging Knee Raise", type: "bodyweight", rest: 75, step: 2.5, cue: "Hang from the rig, no swinging. Lift your knees towards your chest, lower slowly." },
   // Up B – Pull
@@ -36,7 +36,7 @@ export const seedExercises = {
   dips:             { name: "Dips (Rig)", type: "bodyweight", rest: 105, step: 2.5, cue: "Shoulders down, lean slightly forward. Lower until upper arms are parallel, press up. Optional." },
   // Low B – Hinge
   deadlift:         { name: "Barbell Deadlift", type: "weight", step: 5, rest: 180, start: 40, cue: "Bar over mid-foot, flat back, brace. Push the floor away, finish with your hips. Film it from the side." },
-  db_bulgarian:     { name: "DB Bulgarian Split Squat", type: "weight", scale: DB_SCALE, rest: 105, step: 1, per: "leg", start: 5, cue: "Rear foot on the bench, front foot far enough forward. Drop straight down, push through the front heel." },
+  db_bulgarian:     { name: "DB Bulgarian Split Squat", handKg: true, type: "weight", scale: DB_SCALE, rest: 105, step: 1, per: "leg", start: 5, cue: "Rear foot on the bench, front foot far enough forward. Drop straight down, push through the front heel." },
   prone_leg_curl:   { name: "Prone Cable Leg Curl", type: "weight", step: 2.5, per: "leg", rest: 75, start: 10 },
   ham_curl:         { name: "Leg Curl (Machine)", type: "weight", rest: 75, step: 2.5, cue: "Adjust to fit your legs. Curl the pad up, return slowly. Hips still." },
   hip_thrust:       { name: "Barbell Hip Thrust", type: "weight", rest: 105, step: 2.5, start: 40, cue: "Upper back on the bench, bar over your hips. Drive through your heels, squeeze at the top, chin tucked." },
@@ -68,10 +68,10 @@ export const extraExercises = {
   cable_pull_through:   { name: "Cable Pull-Through", type: "weight", step: 2.5, rest: 75 },
   cable_crunch:         { name: "Cable Crunch", type: "weight", step: 2.5, rest: 75 },
   pallof_press:         { name: "Pallof Press", type: "weight", step: 2.5, per: "side", rest: 50 },
-  db_reverse_lunge:     { name: "DB Reverse Lunge", type: "weight", scale: DB_SCALE, step: 1, per: "leg", rest: 105 },
+  db_reverse_lunge:     { name: "DB Reverse Lunge", handKg: true, type: "weight", scale: DB_SCALE, step: 1, per: "leg", rest: 105 },
   db_hip_thrust:        { name: "DB Hip Thrust", type: "weight", scale: DB_SCALE, step: 1, rest: 105, start: 20, cue: "One dumbbell across your hip crease, upper back on the bench. Drive through your heels, squeeze your glutes at the top, chin tucked." },
   glute_press:          { name: "Glute Press (Machine)", type: "weight", step: 2.5, rest: 105, cue: "Adjust the machine to fit. Push through your heels, squeeze your glutes, return slowly. Start light and adjust after set 1." },
-  db_step_up:           { name: "DB Step-Up", type: "weight", scale: DB_SCALE, step: 1, per: "leg", rest: 105 },
+  db_step_up:           { name: "DB Step-Up", handKg: true, type: "weight", scale: DB_SCALE, step: 1, per: "leg", rest: 105 },
 };
 
 const it = (id, sets, min, max, extra = {}) => ({ ex: id, sets, min, max, ...extra });
