@@ -191,3 +191,40 @@ footer .drives .drive { height:32px; }
 .restbtn.custom { color:var(--teal); font-weight:bold; }
 
 .m-bad { color:var(--red, #c33); }
+
+/* 0.12 */
+.restclock .z { opacity:.35; }
+.exname small.setno { color:var(--yellow); font-weight:bold; }
+.btn.log .of { font-weight:normal; }
+.val { gap:2px; }
+.val i { font-style:normal; font:normal 13px "Segoe UI", Tahoma, sans-serif; color:var(--grey); margin:0 2px; align-self:center; }
+.cats { display:flex; flex-direction:column; gap:3px; }
+.cathead { display:flex; justify-content:space-between; align-items:center; min-height:34px; padding:0 8px; background:var(--path); border:1px solid var(--line); font-weight:bold; text-align:left; }
+.cathead .rt { font-weight:normal; color:var(--grey); }
+.inprog, .ptag { color:var(--teal); }
+.ptag { font-style:normal; font-size:10px; margin-left:6px; padding:0 3px; border:1px solid var(--teal); vertical-align:1px; }
+textarea.gnote, #sh_note { width:100%; border:1px solid var(--line); background:var(--note-bg); color:var(--txt); font:inherit; padding:6px; resize:vertical; }
+.frow label[for="rest"] { width:auto; }
+.overlay.sheet .frow input { flex:none; width:80px; }
+.wdesc { flex:1; color:var(--grey); }
+.alts { display:flex; flex-direction:column; gap:3px; }
+.btn.alt { text-align:left; min-height:34px; }
+.altname { color:var(--purple); }
+
+/* live timer: full screen, big numbers (phone lies on the floor) */
+.overlay.live { padding:0; align-items:stretch; background:var(--win); }
+.overlay.live .win { max-width:520px; max-height:none; height:100dvh; border:0; box-shadow:none; display:flex; flex-direction:column; }
+.overlay.live .title { padding-top:env(safe-area-inset-top); min-height:40px; }
+.overlay.live .x { height:40px; width:52px; font-size:26px; }
+.lbody { flex:1; justify-content:center; align-items:stretch; gap:12px; padding:16px; text-align:center; }
+.lstep .lcap { display:block; color:var(--grey); margin-bottom:3px; text-align:left; }
+.lstep .val { height:56px; font-size:28px; }
+.lstep .btn.sq { width:56px; height:56px; }
+.lbtn { min-height:64px; font-size:18px; font-weight:bold; }
+.lbtn.stop { min-height:96px; font-size:22px; }
+.lphase { font-size:22px; font-weight:bold; }
+.lbig { font:bold min(32vw, 170px)/1 "Courier New", monospace; }
+.lsub { color:var(--grey); font-size:16px; }
+.prep { color:var(--amber); } .hold { color:var(--blue); } .over { color:var(--green); } .rest { color:var(--rest); }
+.lphase.over, .lbig.over { background:none; }
+.lsets { color:var(--green); font:15px "Courier New", monospace; }

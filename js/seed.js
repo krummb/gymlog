@@ -8,38 +8,40 @@
 //   start     typed starting weight for a brand-new exercise (becomes the "Start:" baseline)
 // Optional item fields: ss (superset with the neighbour), opt (optional exercise)
 export const SEED_VERSION = 1;
+// Dumbbell rack: 1-10 kg in 1 kg steps, then even numbers (12, 14 … 60)
+export const DB_SCALE = { unit: "kg", values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...Array.from({ length: 25 }, (_, i) => 12 + i * 2)] };
 export const PROGRAM_VERSION = 2;
 
 export const seedExercises = {
   // Up A – Push
-  db_bench:         { name: "DB Bench Press", type: "weight", step: 1, per: "hand", start: 10, cue: "Shoulder blades pinched, feet planted. Lower to mid-chest under control, press up without flaring your elbows." },
-  seated_row:       { name: "Seated Cable Row", type: "weight", step: 2.5, cue: "Sit tall, pull towards lower ribs. No leaning or jerking." },
-  db_shoulder_press:{ name: "DB Shoulder Press", type: "weight", step: 1, per: "hand", start: 8, cue: "Dumbbells at shoulder height, ribs down. Press up without arching your lower back." },
-  cable_lateral:    { name: "Cable Lateral Raise", type: "weight", step: 1, per: "side", start: 4, cue: "Elbow leads, slight bend. Raise to shoulder height, lower slowly. If reps collapse, go lighter." },
-  triceps_pushdown: { name: "Cable Triceps Pushdown", type: "weight", step: 2.5, cue: "Elbows pinned to your sides. Push down to straight arms, return slowly." },
-  face_pull:        { name: "Cable Face Pull", type: "weight", step: 2.5, start: 9, cue: "Rope to forehead height, elbows high, squeeze your shoulder blades together. Return slowly." },
+  db_bench:         { name: "DB Bench Press", type: "weight", scale: DB_SCALE, rest: 105, step: 1, per: "hand", start: 10, cue: "Shoulder blades pinched, feet planted. Lower to mid-chest under control, press up without flaring your elbows." },
+  seated_row:       { name: "Seated Cable Row", type: "weight", rest: 105, step: 2.5, cue: "Sit tall, pull towards lower ribs. No leaning or jerking." },
+  db_shoulder_press:{ name: "DB Shoulder Press", type: "weight", scale: DB_SCALE, rest: 105, step: 1, per: "hand", start: 8, cue: "Dumbbells at shoulder height, ribs down. Press up without arching your lower back." },
+  cable_lateral:    { name: "Cable Lateral Raise", type: "weight", rest: 75, step: 1, per: "side", start: 4, cue: "Elbow leads, slight bend. Raise to shoulder height, lower slowly. If reps collapse, go lighter." },
+  triceps_pushdown: { name: "Cable Triceps Pushdown", type: "weight", rest: 75, step: 2.5, cue: "Elbows pinned to your sides. Push down to straight arms, return slowly." },
+  face_pull:        { name: "Cable Face Pull", type: "weight", rest: 75, step: 2.5, start: 9, cue: "Rope to forehead height, elbows high, squeeze your shoulder blades together. Return slowly." },
   // Low A – Quads
-  goblet_squat:     { name: "Goblet Squat", type: "weight", step: 1, start: 12, cue: "Dumbbell held at your chest. Sit down between your heels, chest up, knees tracking over your toes." },
-  db_rdl:           { name: "DB Romanian Deadlift", type: "weight", step: 1, per: "hand", start: 10, cue: "Soft knees, hinge at the hips, dumbbells close to your legs. Flat back; stop around mid-shin." },
-  db_split_squat:   { name: "DB Split Squat", type: "weight", step: 1, per: "leg", start: 6, cue: "Long stride, torso upright. Drop the back knee straight down, push through the front heel." },
-  calf_raise:       { name: "Calf Raise (Plate-Loaded)", type: "weight", step: 2.5, cue: "Balls of your feet on the plate. Rise high, pause, lower slowly all the way." },
-  hanging_knee_raise:{ name: "Hanging Knee Raise", type: "bodyweight", step: 2.5, cue: "Hang from the rig, no swinging. Lift your knees towards your chest, lower slowly." },
+  goblet_squat:     { name: "Goblet Squat", type: "weight", scale: DB_SCALE, rest: 105, step: 1, start: 12, cue: "Dumbbell held at your chest. Sit down between your heels, chest up, knees tracking over your toes." },
+  db_rdl:           { name: "DB Romanian Deadlift", type: "weight", scale: DB_SCALE, rest: 105, step: 1, per: "hand", start: 10, cue: "Soft knees, hinge at the hips, dumbbells close to your legs. Flat back; stop around mid-shin." },
+  db_split_squat:   { name: "DB Split Squat", type: "weight", scale: DB_SCALE, rest: 90, step: 1, per: "leg", start: 6, cue: "Long stride, torso upright. Drop the back knee straight down, push through the front heel." },
+  calf_raise:       { name: "Calf Raise (Plate-Loaded)", type: "weight", rest: 75, step: 2.5, cue: "Balls of your feet on the plate. Rise high, pause, lower slowly all the way." },
+  hanging_knee_raise:{ name: "Hanging Knee Raise", type: "bodyweight", rest: 75, step: 2.5, cue: "Hang from the rig, no swinging. Lift your knees towards your chest, lower slowly." },
   // Up B – Pull
-  pull_up:          { name: "Pull-Up (Strict)", type: "bodyweight", step: 2.5, cue: "Full hang to chin over the bar, no kipping. Stop a rep before failure. Last set: slow negatives or band." },
-  incline_db_press: { name: "Incline DB Press", type: "weight", step: 1, per: "hand", start: 8, cue: "Bench at a low incline. Lower to upper chest, press up; wrists stacked over elbows." },
-  one_arm_row:      { name: "One-Arm DB Row", type: "weight", step: 1, per: "side", start: 12, cue: "Hand and knee on the bench, flat back. Pull the dumbbell to your hip, no twisting." },
-  reverse_fly:      { name: "Reverse Fly (Cable / Delt Machine)", type: "weight", step: 2.5, start: 27.5, cue: "Chest tall, soft elbows. Open your arms wide, squeeze your shoulder blades, return slowly." },
-  lateral_raise:    { name: "DB Lateral Raise", type: "weight", step: 1, per: "hand", start: 4, cue: "Slight bend in elbows. Raise to shoulder height, lower slowly. No swinging." },
-  cable_curl:       { name: "Cable Curl", type: "weight", step: 2.5, start: 14, cue: "Elbows pinned to your sides. Curl up, lower slowly. No leaning back." },
-  dips:             { name: "Dips (Rig)", type: "bodyweight", step: 2.5, cue: "Shoulders down, lean slightly forward. Lower until upper arms are parallel, press up. Optional." },
+  pull_up:          { name: "Pull-Up (Strict)", type: "bodyweight", rest: 150, step: 2.5, cue: "Full hang to chin over the bar, no kipping. Stop a rep before failure. Last set: slow negatives or band." },
+  incline_db_press: { name: "Incline DB Press", type: "weight", scale: DB_SCALE, rest: 105, step: 1, per: "hand", start: 8, cue: "Bench at a low incline. Lower to upper chest, press up; wrists stacked over elbows." },
+  one_arm_row:      { name: "One-Arm DB Row", type: "weight", scale: DB_SCALE, rest: 75, step: 1, per: "side", start: 12, cue: "Hand and knee on the bench, flat back. Pull the dumbbell to your hip, no twisting." },
+  reverse_fly:      { name: "Reverse Fly (Cable / Delt Machine)", type: "weight", rest: 75, step: 2.5, start: 27.5, cue: "Chest tall, soft elbows. Open your arms wide, squeeze your shoulder blades, return slowly." },
+  lateral_raise:    { name: "DB Lateral Raise", type: "weight", scale: DB_SCALE, rest: 75, step: 1, per: "hand", start: 4, cue: "Slight bend in elbows. Raise to shoulder height, lower slowly. No swinging." },
+  cable_curl:       { name: "Cable Curl", type: "weight", rest: 75, step: 2.5, start: 14, cue: "Elbows pinned to your sides. Curl up, lower slowly. No leaning back." },
+  dips:             { name: "Dips (Rig)", type: "bodyweight", rest: 105, step: 2.5, cue: "Shoulders down, lean slightly forward. Lower until upper arms are parallel, press up. Optional." },
   // Low B – Hinge
   deadlift:         { name: "Barbell Deadlift", type: "weight", step: 5, rest: 180, start: 40, cue: "Bar over mid-foot, flat back, brace. Push the floor away, finish with your hips. Film it from the side." },
-  db_bulgarian:     { name: "DB Bulgarian Split Squat", type: "weight", step: 1, per: "leg", start: 5, cue: "Rear foot on the bench, front foot far enough forward. Drop straight down, push through the front heel." },
+  db_bulgarian:     { name: "DB Bulgarian Split Squat", type: "weight", scale: DB_SCALE, rest: 105, step: 1, per: "leg", start: 5, cue: "Rear foot on the bench, front foot far enough forward. Drop straight down, push through the front heel." },
   prone_leg_curl:   { name: "Prone Cable Leg Curl", type: "weight", step: 2.5, per: "leg", rest: 75, start: 10 },
-  ham_curl:         { name: "Leg Curl (Machine)", type: "weight", step: 2.5, cue: "Adjust to fit your legs. Curl the pad up, return slowly. Hips still." },
-  hip_thrust:       { name: "Barbell Hip Thrust", type: "weight", step: 2.5, start: 40, cue: "Upper back on the bench, bar over your hips. Drive through your heels, squeeze at the top, chin tucked." },
-  farmers_carry:    { name: "Farmer's Carry", type: "weight", step: 1, per: "hand", repUnit: "m", repStep: 5, start: 12, cue: "Tall posture, shoulders down, short steady steps. Don't let the weights swing." },
-  plank:            { name: "Plank", type: "timed", fixed: true, step: 5, wstep: 2.5, cue: "Forearms and toes, body in a straight line. Brace and breathe. Add weight once the full time is easy." },
+  ham_curl:         { name: "Leg Curl (Machine)", type: "weight", rest: 75, step: 2.5, cue: "Adjust to fit your legs. Curl the pad up, return slowly. Hips still." },
+  hip_thrust:       { name: "Barbell Hip Thrust", type: "weight", rest: 105, step: 2.5, start: 40, cue: "Upper back on the bench, bar over your hips. Drive through your heels, squeeze at the top, chin tucked." },
+  farmers_carry:    { name: "Farmer's Carry", type: "weight", scale: DB_SCALE, rest: 90, step: 1, per: "hand", repUnit: "m", repStep: 5, start: 12, cue: "Tall posture, shoulders down, short steady steps. Don't let the weights swing." },
+  plank:            { name: "Plank", type: "timed", rest: 60, fixed: true, step: 5, wstep: 2.5, cue: "Forearms and toes, body in a straight line. Brace and breathe. Add weight once the full time is easy." },
 };
 
 // Extra exercises to slot into the program later (how-tos in guides.js, rest times from the user's "Additional Exercise How-Tos").
@@ -61,15 +63,15 @@ export const extraExercises = {
   cable_fly:            { name: "Cable Chest Fly", type: "weight", step: 2.5, rest: 75 },
   one_arm_cable_row:    { name: "One-Arm Cable Row", type: "weight", step: 2.5, per: "side", rest: 75 },
   overhead_triceps_ext: { name: "Overhead Cable Triceps Extension", type: "weight", step: 2.5, rest: 75 },
-  incline_db_curl:      { name: "Incline DB Curl", type: "weight", step: 1, per: "hand", rest: 75 },
-  hammer_curl:          { name: "Hammer Curl", type: "weight", step: 1, per: "hand", rest: 75 },
+  incline_db_curl:      { name: "Incline DB Curl", type: "weight", scale: DB_SCALE, step: 1, per: "hand", rest: 75 },
+  hammer_curl:          { name: "Hammer Curl", type: "weight", scale: DB_SCALE, step: 1, per: "hand", rest: 75 },
   cable_pull_through:   { name: "Cable Pull-Through", type: "weight", step: 2.5, rest: 75 },
   cable_crunch:         { name: "Cable Crunch", type: "weight", step: 2.5, rest: 75 },
   pallof_press:         { name: "Pallof Press", type: "weight", step: 2.5, per: "side", rest: 50 },
-  db_reverse_lunge:     { name: "DB Reverse Lunge", type: "weight", step: 1, per: "leg", rest: 105 },
-  db_hip_thrust:        { name: "DB Hip Thrust", type: "weight", step: 1, rest: 105, start: 20, cue: "One dumbbell across your hip crease, upper back on the bench. Drive through your heels, squeeze your glutes at the top, chin tucked." },
+  db_reverse_lunge:     { name: "DB Reverse Lunge", type: "weight", scale: DB_SCALE, step: 1, per: "leg", rest: 105 },
+  db_hip_thrust:        { name: "DB Hip Thrust", type: "weight", scale: DB_SCALE, step: 1, rest: 105, start: 20, cue: "One dumbbell across your hip crease, upper back on the bench. Drive through your heels, squeeze your glutes at the top, chin tucked." },
   glute_press:          { name: "Glute Press (Machine)", type: "weight", step: 2.5, rest: 105, cue: "Adjust the machine to fit. Push through your heels, squeeze your glutes, return slowly. Start light and adjust after set 1." },
-  db_step_up:           { name: "DB Step-Up", type: "weight", step: 1, per: "leg", rest: 105 },
+  db_step_up:           { name: "DB Step-Up", type: "weight", scale: DB_SCALE, step: 1, per: "leg", rest: 105 },
 };
 
 const it = (id, sets, min, max, extra = {}) => ({ ex: id, sets, min, max, ...extra });
@@ -83,6 +85,7 @@ export const seedWorkouts = {
 
 export const seedSettings = {
   globalNote: "Breathe out on effort. Stop if sharp pain.",
-  restSec: 120,
+  restSec: 120, // rest between exercises (after an exercise's last set); rest between sets is per exercise
+  prepSec: 10,  // live hold timer: get-ready time
   theme: "c2",
 };

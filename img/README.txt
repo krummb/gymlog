@@ -5,3 +5,5 @@ Pictures are precached by sw.js for offline use: when a new exercise id is added
 Current set: all 46 exercises (24 program + 22 extras), square crops (about 500 px) cut from four generated sheets on 2026-11-20, alpha kept. Only one picture per exercise so far (-1); -2 is optional.
 
 No picture yet (0.11.0): prone_leg_curl, db_hip_thrust, glute_press.
+
+Animated (0.12.0): db_bulgarian-1.webp and cable_crunch-1.webp are animated WebP loops converted from the user's GIFs (500 px, alpha kept). Animated WebP is the format for loops (smaller than GIF, full transparency).

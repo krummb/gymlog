@@ -2,7 +2,8 @@ import { load, save, exportJson, importJson } from "./store.js";
 import * as L from "./logic.js";
 import { GUIDES } from "./guides.js";
 import * as Sync from "./sync.js";
-import { ALTS } from "./alts.js";
+import { ALTS, CATS, CAT_ORDER, REST_TEXT } from "./alts.js";
+import { DB_SCALE } from "./seed.js";
 
 let db = load();
 const MODES = ["auto", "light", "dark"];
@@ -14,7 +15,7 @@ function applyMode() {
 }
 applyMode();
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyMode);
-const ui = { overUntil: 0, screen: "today", letter: null, active: null, draft: null, restEnd: null, dialog: null };
+const ui = { overUntil: 0, screen: "today", letter: null, active: null, draft: null, restEnd: null, dialog: null, live: null, openCats: new Set() };
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -84,23 +85,34 @@ function render() {
   const scroll = app.querySelector(".body")?.scrollTop || 0;
   const today_ = ui.screen === "today";
   app.innerHTML = `
-    <header class="title"><span class="ttl">GymLog – ${today_ ? `Workout ${ui.letter} · ${esc(workout().name)}` : ui.screen === "programs" ? "Programs" : "Settings"}</span><span class="restclock" id="restclock"></span></header>
-    <main class="body">${today_ ? today() : ui.screen === "programs" ? programs() : settings()}</main>
+    <header class="title"><span class="ttl">${esc(titleText())}</span><span class="restclock" id="restclock"></span></header>
+    <main class="body">${today_ ? today() : ui.screen === "programs" ? programs() : ui.screen === "exercises" ? exercisesScreen() : settings()}</main>
     <footer>
       ${today_ ? fkeys() : ""}
       <nav class="menu">
         <button data-act="screen" data-v="today" class="${ui.screen === "today" ? "on" : ""}"><u>T</u>oday</button>
         <button data-act="screen" data-v="programs" class="${ui.screen === "programs" ? "on" : ""}"><u>P</u>rograms</button>
+        <button data-act="screen" data-v="exercises" class="${ui.screen === "exercises" ? "on" : ""}"><u>E</u>xercises</button>
         <button data-act="screen" data-v="settings" class="${ui.screen === "settings" ? "on" : ""}"><u>S</u>ettings</button>
       </nav>
-      ${today_ ? drivesBar() + `<div class="cmdline"><label for="gnote">Note (all)&gt;</label><input id="gnote" value="${esc(db.settings.globalNote)}"></div>` : ""}
+      ${today_ ? drivesBar() : ""}
     </footer>
-    ${ui.dialog ? dialog() : ""}`;
+    ${ui.dialog ? dialog() : ""}
+    ${ui.live ? liveView() : ""}`;
   const b = app.querySelector(".body");
   if (b) b.scrollTop = scroll;
   app.querySelectorAll("img.gimg").forEach(wireImg);
   tick();
+  if (ui.live) liveTick();
 }
+
+// "GymLog\wo-A\Up-A_Push"
+function titleText() {
+  if (ui.screen !== "today") return "GymLog\\" + { programs: "Programs", exercises: "Exercises", settings: "Settings" }[ui.screen];
+  const [a, ...b] = workout().name.split(/\s+-\s+/);
+  return `GymLog\\wo-${ui.letter}\\${a.trim().replace(/\s+/g, "-")}${b.length ? "_" + b.join("_").trim().replace(/\s+/g, "-") : ""}`;
+}
+const shortName = (l) => db.workouts[l].name.split(/\s+-\s+/)[0] || l;
 
 // Pictures are optional: show an image once it loads, keep the placeholder otherwise
 function wireImg(img) {
@@ -114,7 +126,7 @@ function drivesBar() {
   const open = L.openSession(db);
   const drives = L.LETTERS.map((l) => {
     const isDone = doneSet.has(l) && !(open && open.workout === l);
-    return `<button class="drive ${l === ui.letter ? "sel" : ""}" data-act="letter" data-v="${l}" aria-label="Workout ${l}${isDone ? ", done" : ""}">${I.disk}${l}${isDone ? '<b class="ok">✓</b>' : ""}</button>`;
+    return `<button class="drive ${l === ui.letter ? "sel" : ""}" data-act="letter" data-v="${l}" aria-label="Workout ${l}${isDone ? ", done" : ""}">${I.disk}${esc(shortName(l))}${isDone ? '<b class="ok">✓</b>' : ""}</button>`;
   }).join("");
 
   return `<div class="drives">${drives}</div>`;
@@ -133,7 +145,7 @@ function today() {
   const warming = !!s?.warmStart;
   const wAt = s?.warmAt ? new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "";
   const wMin = s?.warmSec ? Math.max(1, Math.round(s.warmSec / 60)) + " min" : "done";
-  const wInfo = warm ? (wAt && s.warmSec ? `${wAt} · ${wMin}` : wMin) : warming ? `${wAt} · running` : "walk / bike";
+  const wInfo = warm ? (wAt && s.warmSec ? `${wAt} · ${wMin}` : wMin) : warming ? `${wAt} · running` : "bike / row";
   const wActive = ui.active === WARM;
   const wIc = wActive ? I.cur : warm ? I.check : I.page("var(--ic-page)");
   const rows = [`<button class="row ${warm ? "done" : "todo"} ${wActive ? "active" : ""}" data-act="warmup">
@@ -172,8 +184,44 @@ function today() {
 function exhead(title, sub) {
   return `<div class="exhead">
     <button class="btn nav" data-act="nav" data-v="-1" aria-label="Previous exercise">◂</button>
-    <div class="exname">${title}${sub ? `<small>${sub}</small>` : ""}</div>
+    <div class="exname">${title}${sub ? `<small class="${/^Set /.test(sub) ? "setno" : ""}">${sub}</small>` : ""}</div>
     <button class="btn nav" data-act="nav" data-v="1" aria-label="Next exercise">▸</button></div>`;
+}
+
+// Superset partner of an item (the neighbour that is also marked SS), or null
+function partnerOf(item) {
+  if (!item.ss) return null;
+  const its = items(), ix = its.findIndex((i) => i.ex === item.ex);
+  const nx = its[ix + 1], pv = its[ix - 1];
+  return nx && nx.ss && !(pv && pv.ss) ? nx : pv && pv.ss ? pv : null;
+}
+
+// What follows the next logged set of an item: the superset partner without rest, rest between sets,
+// or (last set) rest between exercises. Worked out before the set is logged.
+function plan(item) {
+  const s = session(), ex = db.exercises[item.ex];
+  const n = L.itemState(s, item).sets.length + 1, last = n >= item.sets;
+  const p = partnerOf(item), pst = p && L.itemState(s, p);
+  if (pst && pst.status === "todo") return pst.sets.length < n ? { sec: 0, next: p.ex, go: db.exercises[p.ex].name } : { sec: L.restFor(db, ex), next: p.ex };
+  if (last) {
+    const more = items().some((it) => it.ex !== item.ex && L.itemState(s, it).status === "todo");
+    return more ? { sec: db.settings.restSec, next: null, between: true } : { sec: 0, next: null };
+  }
+  return { sec: L.restFor(db, ex), next: item.ex };
+}
+const planText = (p) => (p.go ? `then ${p.go}` : p.sec ? `then rest ${fmtRest(p.sec)}${p.between ? " · next exercise" : ""}` : "last set");
+
+// Log one set; returns true if the exercise is now complete
+function logSet(item, kg, reps) {
+  const s = ensureSession(); if (!s) return null;
+  const ex = db.exercises[item.ex];
+  const p = plan(item);
+  const e = L.entryFor(s, item.ex);
+  e.sets.push({ kg: ex.type === "timed" && !ex.fixed ? null : (kg || 0), reps });
+  const done = e.sets.length >= item.sets;
+  if (done) e.status = "done";
+  persist();
+  return { done, p };
 }
 
 // Some sets logged but fewer than planned: F8 ends the exercise early (keeps the sets) instead of skipping it
@@ -206,7 +254,7 @@ function warmDetail() {
       ${exhead("Warm-up", done ? "done" : running ? "running" : "")}
       <div class="detail">
         <div class="warmclock ${elapsed >= 300 ? "reached" : ""}" id="warmclock">${fmtClock(elapsed)}</div>
-        <div class="last">${done ? (s.warmSec ? "Warm-up done · " + fmtClock(s.warmSec) + (s.warmAt ? " · started " + new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "") : "Warm-up done") : running && s.warmAt ? "Started " + new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + " · target 5–10 min" : "Target 5–10 min · easy walk or bike, enough to feel warm"}</div>
+        <div class="last">${done ? (s.warmSec ? "Warm-up done · " + fmtClock(s.warmSec) + (s.warmAt ? " · started " + new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "") : "Warm-up done") : running && s.warmAt ? "Started " + new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + " · target 5–10 min" : "Target 5–10 min · easy bike or row, enough to feel warm"}</div>
         ${done ? `<button class="btn" data-act="warmundo">Undo warm-up</button>`
           : running ? `<button class="btn primary log" data-act="warmstop">Stop · warm-up done</button>`
           : `<button class="btn primary log" data-act="warmstart">Start warm-up</button><button class="btn" data-act="warmdone">Mark done (no timer)</button>`}
@@ -238,16 +286,21 @@ function detail() {
 
   const logged = st.sets.map((x, i) => `<div class="logged">[x] Set ${i + 1} · ${timed ? x.reps + " s" + (x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : "") : (x.kg ? L.fmtKg(x.kg) + " " + L.unitOf(ex) : "BW") + " × " + x.reps + (ex.repUnit ? " " + ex.repUnit : "")}</div>`).join("");
 
-  const stepper = (field, label, val, color, cap) => `
-    <div class="stepper"><div class="cap">${cap}</div><div class="sr">
+  const stepper = (field, label, val, color) => `
+    <div class="stepper"><div class="sr">
       <button class="btn sq" aria-label="Less ${label}" data-act="dec" data-v="${field}">${I.minus}</button>
       <div class="val" style="color:${color}">${val}</div>
       <button class="btn sq" aria-label="More ${label}" data-act="inc" data-v="${field}">${I.plus}</button></div></div>`;
 
-  const kgVal = d.kg == null || d.kg === 0 ? (ex.type === "weight" ? "0" : "BW") : L.fmtKg(d.kg);
+  const u = L.unitOf(ex), perU = ex.per === "hand" ? "/hand" : "";
+  const kgVal = d.kg == null || d.kg === 0
+    ? (ex.type === "weight" ? `<b>0</b><i>${u}${perU}</i>` : timed ? `<i>+</i><b>0</b><i>${u}</i>` : `<b>BW</b>`)
+    : `${ex.type === "weight" ? "" : "<i>+</i>"}<b>${L.fmtKg(d.kg)}</b><i>${u}${perU}</i>`;
+  const repVal = timed ? `<b>${d.reps}</b><i>s</i>` : `<i>×</i><b>${d.reps}</b>${ex.repUnit ? `<i>${esc(ex.repUnit)}</i>` : ex.per === "leg" || ex.per === "side" ? `<i>/${ex.per}</i>` : ""}`;
+  const pl = finished ? null : plan(item);
   // Hint line: manual-progression cases keep their advice; superset items name their partner; the rest list alternatives.
-  const its = items(), ix = its.findIndex((i) => i.ex === item.ex);
-  const partner = item.ss ? (its[ix + 1] && its[ix + 1].ss && !(its[ix - 1] && its[ix - 1].ss) ? its[ix + 1] : its[ix - 1] && its[ix - 1].ss ? its[ix - 1] : null) : null;
+  const its = items();
+  const partner = partnerOf(item);
   const alts = (ALTS[item.ex] || []).filter((id) => db.exercises[id] && !its.some((i) => i.ex === id)).slice(0, 2).map((id) => db.exercises[id].name);
   const hint = timed
     ? (ex.fixed ? `Hold ${item.min} s. Once it is easy, add weight with the + button.` : `Next time: beat your best by +${ex.step} s`)
@@ -262,10 +315,12 @@ function detail() {
       <div class="detail">
         ${finished ? `<button class="btn" data-act="undo">Undo last</button>` : `
           <div class="steppers">
-            ${timed && !ex.fixed ? "" : stepper("kg", "weight", kgVal, "var(--blue)", ex.scale ? `${L.unitOf(ex).toUpperCase()} · machine scale` : `${L.unitOf(ex).toUpperCase()}${ex.per === "hand" ? " · per hand" : ""} · step ${L.fmtKg(timed ? ex.wstep || 2.5 : ex.step)}`)}
-            ${stepper("reps", timed ? "seconds" : L.repCap(ex).toLowerCase(), d.reps, "var(--green)", L.repCap(ex))}
+            ${timed && !ex.fixed ? "" : stepper("kg", "weight", kgVal, "var(--blue)")}
+            ${stepper("reps", timed ? "seconds" : L.repCap(ex).toLowerCase(), repVal, "var(--green)")}
           </div>
-          <div class="logrow"><button class="btn primary log" data-act="log">Log set ${setNo} · then rest ${fmtRest(L.restFor(db, ex))}</button>
+          <div class="logrow">${timed
+            ? `<button class="btn primary log" data-act="liveopen">▶ Set ${setNo} <span class="of">(of ${item.sets})</span> · live timer</button><button class="btn undo" data-act="log">Log</button>`
+            : `<button class="btn primary log" data-act="log">Log set ${setNo} <span class="of">(of ${item.sets})</span> · ${planText(pl)}</button>`}
           ${st.sets.length ? `<button class="btn undo" data-act="undo">Undo</button>` : ""}</div>`}
       </div>
     </div>`;
@@ -284,6 +339,12 @@ function detail() {
   return { top, info };
 }
 
+// "90" or "1:30" -> seconds (10 s .. 15 min), else 0
+function parseRest(v) {
+  const m = String(v).trim().match(/^(?:(\d+):(\d{1,2})|(\d+))$/);
+  const sec = m ? (m[3] != null ? +m[3] : +m[1] * 60 + +m[2]) : 0;
+  return sec >= 10 && sec <= 900 ? sec : 0;
+}
 const fmtRest = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
 function programs() {
@@ -306,6 +367,33 @@ function programs() {
   }).join("") + `<p class="small">Tap “rest” under a name to set the rest time for that exercise (it applies wherever the exercise is used; default is set in Settings). Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises: “60s” is a fixed hold time (plank); “20s+” is a starting time, then the target is your last best + the step. SS = superset with the next row.</p>`;
 }
 
+function exercisesScreen() {
+  const inProg = {};
+  for (const l of L.LETTERS) for (const it of db.workouts[l].items) (inProg[it.ex] = inProg[it.ex] || []).push(l);
+  const groups = new Map(CAT_ORDER.map((c) => [c, []]));
+  for (const [id, e] of Object.entries(db.exercises)) {
+    const c = CATS[id] && groups.has(CATS[id]) ? CATS[id] : "Other";
+    groups.get(c).push([id, e]);
+  }
+  const out = [];
+  for (const [c, list] of groups) {
+    if (!list.length) continue;
+    list.sort((a, b) => a[1].name.localeCompare(b[1].name));
+    const open = ui.openCats.has(c), n = list.filter(([id]) => inProg[id]).length;
+    out.push(`<button class="cathead" data-act="cat" data-v="${esc(c)}" aria-expanded="${open}"><span>${open ? "▾" : "▸"} ${esc(c)}</span><span class="rt">${list.length}${n ? ` · <b class="inprog">${n} in program</b>` : ""}</span></button>`);
+    if (open) out.push(`<div class="scales">${list.map(([id, e]) => {
+      const mode = e.type !== "timed" && e.scale && e.scale.values && e.scale.values.length ? `<span class="m-scale">scale</span>` : `<span class="m-step">step ${L.fmtKg(e.step)} ${e.type === "timed" ? "s" : "kg"}</span>`;
+      const tag = inProg[id] ? `<i class="ptag">${inProg[id].map(shortName).map(esc).join(", ")}</i>` : "";
+      return `<button class="srow" data-act="exdlg" data-ex="${id}"><span class="nm">${esc(e.name)}${tag}</span><span class="rt"><span class="m-wt">${esc(L.currentText(e))}</span> · ${mode} · ${fmtRest(L.restFor(db, e))}</span></button>`;
+    }).join("")}</div>`);
+  }
+  return `<div class="panel"><div class="pathbar">▾ gym:\\exercises\\*.*</div><div class="detail">
+    <p class="small">Tap a group to open it, an exercise to change its name, current weight, rest, step or weight scale. <b class="inprog">Up A</b> etc. = used in that workout.</p>
+    <div class="cats">${out.join("")}</div>
+    <button class="btn" data-act="exdlg" data-ex="">+ Add exercise…</button>
+  </div></div>`;
+}
+
 function syncPanel() {
   const c = Sync.config(), on = Sync.configured();
   const when = c.last ? new Date(c.last).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" }) : null;
@@ -319,16 +407,12 @@ function syncPanel() {
 
 function settings() {
   return `<div class="panel"><div class="pathbar">▾ gym:\\settings</div><div class="detail">
-    <div class="noterow"><label for="rest">Rest (s)</label><input id="rest" type="number" inputmode="numeric" value="${db.settings.restSec}"></div>
+    <div class="frow"><label for="rest">Rest between exercises (s)</label><input id="rest" type="number" inputmode="numeric" value="${db.settings.restSec}"></div>
+    <p class="small">Used after the last set of an exercise, before the next one. Rest between sets is set per exercise (Programs, Exercises or the info sheet); exercises without one use this value too.</p>
     <div class="setlabel">Appearance</div>
     <div class="seg">${MODES.map((m) => `<button class="btn ${(db.settings.mode || "auto") === m ? "primary" : ""}" data-act="mode" data-v="${m}">${m[0].toUpperCase() + m.slice(1)}</button>`).join("")}</div>
-    <div class="setlabel">Exercises</div>
-    <p class="small">Tap one to change its name, step, current weight or weight scale.</p>
-    <div class="scales">${Object.entries(db.exercises).map(([id, e]) => {
-      const mode = e.type !== "timed" && e.scale && e.scale.values.length ? `<span class="m-scale">scale</span>` : `<span class="m-step">step ${L.fmtKg(e.step)} ${e.type === "timed" ? "s" : "kg"}</span>`;
-      return `<button class="srow" data-act="exdlg" data-ex="${id}"><span class="nm">${esc(e.name)}</span><span class="rt"><span class="m-wt">${esc(L.currentText(e))}</span> · ${mode}</span></button>`;
-    }).join("")}</div>
-    <button class="btn" data-act="exdlg" data-ex="">+ Add exercise…</button>
+    <div class="setlabel">General note</div>
+    <textarea id="gnote" rows="2" class="gnote">${esc(db.settings.globalNote)}</textarea>
     <div class="setlabel">Sync to GitHub</div>
     ${syncPanel()}
     <div class="setlabel">Backup</div>
@@ -345,6 +429,69 @@ function dialog() {
   return `<div class="overlay ${d.sheet ? "sheet" : ""}" data-act="close"><div class="win" role="dialog" aria-label="${esc(d.title)}" data-act="noop">
     <div class="title">${esc(d.title)}<button class="x" data-act="close" aria-label="Close">×</button></div>
     <div class="detail">${d.body}${d.ok === false ? "" : '<button class="btn primary wide" data-act="close">OK</button>'}</div></div></div>`;
+}
+
+// ---------- live timer (timed exercises: prep → hold → rest → next set) ----------
+let liveT = null, actx = null, wakeLock = null, lastBeep = null;
+function beepInit() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (e) {} }
+function beep(f = 880, d = 0.12) {
+  if (!actx) return;
+  try { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = f; g.gain.value = 0.25; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d); } catch (e) {}
+}
+async function wake(on) {
+  try { if (on && navigator.wakeLock && !wakeLock) wakeLock = await navigator.wakeLock.request("screen"); if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; } } catch (e) {}
+}
+function liveGo(phase, sec) {
+  const lv = ui.live; lv.phase = phase; lv.t = Date.now(); lv.end = sec ? lv.t + sec * 1000 : null; lastBeep = null;
+  if (phase === "prep") lv.end = lv.t + lv.prep * 1000;
+  if (phase === "hold") { lv.goalHit = false; beep(1046, 0.35); }
+  render(); liveTick();
+}
+function liveClose() { clearTimeout(liveT); wake(false); ui.live = null; }
+function liveTick() {
+  clearTimeout(liveT);
+  const lv = ui.live; if (!lv) return;
+  const now = Date.now(), el = document.getElementById("livebig");
+  if (lv.phase === "prep" || lv.phase === "rest") {
+    const left = Math.ceil((lv.end - now) / 1000);
+    if (left <= 0) { liveGo(lv.phase === "rest" && lv.prep ? "prep" : "hold"); return; }
+    if (left <= 3 && lastBeep !== left) { lastBeep = left; beep(660, 0.1); }
+    if (el) el.textContent = fmtClock(left);
+  } else if (lv.phase === "hold") {
+    const e = Math.floor((now - lv.t) / 1000), left = lv.goal - e;
+    if (left <= 0 && !lv.goalHit) { lv.goalHit = true; beep(1046, 0.15); setTimeout(() => beep(1046, 0.15), 220); render(); return; }
+    else if (left > 0 && left <= 3 && lastBeep !== left) { lastBeep = left; beep(660, 0.08); }
+    if (el) el.textContent = left > 0 ? fmtClock(left) : "+" + fmtClock(-left);
+  }
+  liveT = setTimeout(liveTick, 200);
+}
+function liveView() {
+  const lv = ui.live, ex = db.exercises[lv.ex], item = items().find((i) => i.ex === lv.ex);
+  const s = session(), sets = s && s.entries[lv.ex] ? s.entries[lv.ex].sets : [];
+  const of = item ? item.sets : 1, setNo = Math.min(of, sets.length + (lv.phase === "done" ? 0 : 1));
+  const kgTxt = lv.kg ? ` +${L.fmtKg(lv.kg)} ${L.unitOf(ex)}` : "";
+  const st = (f, label, val) => `<div class="lstep"><span class="lcap">${label}</span><div class="sr">
+      <button class="btn sq" data-act="livestep" data-f="${f}" data-v="-1" aria-label="Less ${label}">${I.minus}</button><div class="val">${val}</div>
+      <button class="btn sq" data-act="livestep" data-f="${f}" data-v="1" aria-label="More ${label}">${I.plus}</button></div></div>`;
+  let main = "";
+  if (lv.phase === "setup") main = `
+      ${st("prep", "Get ready", `<b>${lv.prep}</b><i>s</i>`)}
+      ${st("goal", "Hold", `<b>${lv.goal}</b><i>s</i>`)}
+      ${ex.fixed ? st("kg", "Added weight", `<i>+</i><b>${L.fmtKg(lv.kg)}</b><i>${L.unitOf(ex)}</i>`) : ""}
+      <button class="btn primary lbtn" data-act="livestart">▶ Start</button>`;
+  else if (lv.phase === "prep") main = `<div class="lphase prep">Get ready</div><div class="lbig prep" id="livebig"></div>
+      <div class="lsub">then hold ${lv.goal} s${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start now</button>`;
+  else if (lv.phase === "hold") main = `<div class="lphase ${lv.goalHit ? "over" : "hold"}">${lv.goalHit ? "Goal reached · keep going" : "Hold"}</div><div class="lbig ${lv.goalHit ? "over" : "hold"}" id="livebig"></div>
+      <div class="lsub">goal ${lv.goal} s${kgTxt}</div><button class="btn primary lbtn stop" data-act="livestop">■ Stop · log set</button>`;
+  else if (lv.phase === "rest") main = `<div class="lphase rest">Rest · set ${setNo} of ${of} next</div><div class="lbig rest" id="livebig"></div>
+      <div class="lsub">Last set: ${lv.held} s${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start next set now</button><button class="btn lbtn" data-act="liveend">End ${esc(ex.name)} here</button>`;
+  else main = `<div class="lphase over">All ${of} sets done</div><div class="lsub">${sets.map((x) => x.reps + " s").join(" · ")}${kgTxt}</div>
+      <button class="btn primary lbtn" data-act="liveclose">Next exercise</button>`;
+  return `<div class="overlay live"><div class="win">
+    <div class="title">${esc(ex.name)} · set ${setNo} of ${of}<button class="x" data-act="liveclose" aria-label="Close">×</button></div>
+    <div class="detail lbody">${main}
+      ${sets.length ? `<div class="lsets">${sets.map((x, i) => `Set ${i + 1}: ${x.reps} s${x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : ""}`).join("<br>")}</div>` : ""}
+    </div></div></div>`;
 }
 
 // ---------- rest timer ----------
@@ -371,7 +518,7 @@ function tick() {
   }
   if (!text && ui.overUntil > now) { text = "REST OVER"; over = true; }
   if (!text && warming) text = "Warm " + fmtClock(wsec);
-  el.textContent = text;
+  el.innerHTML = esc(text).replace(/ 0:/, ' <span class="z">0</span>:');
   el.classList.toggle("over", over);
   if (ui.restEnd || ui.overUntil > now || warming) timerId = setTimeout(tick, 250);
 }
@@ -399,15 +546,12 @@ const act = {
   inc: (f) => bump(f, 1),
   dec: (f) => bump(f, -1),
   log: () => {
-    const s = ensureSession(); if (!s) return;
     const item = items().find((i) => i.ex === ui.active);
-    const ex = db.exercises[item.ex];
     const d = draftFor(item);
-    const e = L.entryFor(s, item.ex);
-    e.sets.push({ kg: ex.type === "timed" && !ex.fixed ? null : (d.kg || 0), reps: d.reps });
-    if (e.sets.length >= item.sets) { e.status = "done"; persist(); const n = firstOpenItem(); setActive(n ? n.ex : item.ex); }
-    else persist();
-    startRest(L.restFor(db, ex));
+    const r = logSet(item, d.kg, d.reps); if (!r) return;
+    const next = r.p.next && session() && L.itemState(session(), items().find((i) => i.ex === r.p.next)).status === "todo" ? r.p.next : firstOpenItem()?.ex;
+    if (next && next !== item.ex) setActive(next);
+    if (r.p.sec) startRest(r.p.sec); else { ui.restEnd = null; tick(); }
   },
   undo: () => {
     const s = session(); if (!s) return;
@@ -473,10 +617,26 @@ const act = {
       <div class="glbl bad">Common mistakes</div>
       <p class="gbad">${esc(g.mistakes)}</p>` : `<p class="gcue">${esc(ex.cue)}</p>`;
     // Full-height sheet: text first (readable in the top part of the screen), picture below, blank space last so the picture can be scrolled up into reach
+    const id = ui.active, s = session();
+    const logged = s && s.entries[id] ? s.entries[id].sets.length : 0;
+    const its = items();
+    const alts = (ALTS[id] || []).filter((a) => db.exercises[a]);
+    const altHtml = alts.length ? alts.map((a) => !its.some((i) => i.ex === a) && !logged
+      ? `<button class="btn alt" data-act="doswap" data-v="${a}">${esc(db.exercises[a].name)} <span class="small">· swap today</span></button>`
+      : `<span class="altname">${esc(db.exercises[a].name)}</span>`).join("") : `<span class="small">none listed</span>`;
+    const wdesc = ex.type === "timed" ? `step ${L.fmtKg(ex.step)} s` : ex.scale && JSON.stringify(ex.scale.values) === JSON.stringify(DB_SCALE.values) ? "dumbbell rack: 1–10 kg, then 12, 14 … 60 kg" : ex.scale && ex.scale.values && ex.scale.values.length ? `scale ${ex.scale.values.slice(0, 4).map(L.fmtKg).join(", ")} … ${L.fmtKg(ex.scale.values[ex.scale.values.length - 1])} ${L.unitOf(ex)}` : `step ${L.fmtKg(ex.step)} kg`;
     ui.dialog = { title: ex.name, sheet: true, ok: false, body: `
       ${per ? `<p class="small">Weight and reps are logged ${esc(per)}.</p>` : ""}
       ${how}
-      ${ex.note ? `<p class="notecol">Note: ${esc(ex.note)}</p>` : ""}
+      <div class="glbl">Rest between sets</div>
+      <div class="frow"><label for="sh_rest">Yours</label><input id="sh_rest" data-ex="${id}" type="text" inputmode="numeric" value="${fmtRest(L.restFor(db, ex))}"><span class="small">${ex.rest ? "" : "default"}</span></div>
+      ${REST_TEXT[id] ? `<p class="small">Recommended: ${esc(REST_TEXT[id])}</p>` : ""}
+      <div class="glbl">Weight</div>
+      <div class="frow"><span class="wdesc">${esc(wdesc)}</span><button class="btn" data-act="exdlg" data-ex="${id}">Edit…</button></div>
+      <div class="glbl">Alternatives</div>
+      <div class="alts">${altHtml}</div>
+      <div class="glbl">Note</div>
+      <textarea id="sh_note" data-ex="${id}" rows="3" placeholder="seat height, notch, how it felt…">${esc(ex.note)}</textarea>
       <div class="gimgs gwrap"><div class="guideimg ph">Image coming</div>${imgs}</div>
       <div class="gspace"></div>` };
   },
@@ -581,14 +741,47 @@ const act = {
       <button class="btn primary wide" data-act="premovenow" data-l="${l}" data-i="${i}">Remove</button><button class="btn wide" data-act="close">Cancel</button>` };
   },
   premovenow: (_, el) => { db.workouts[el.dataset.l].items.splice(+el.dataset.i, 1); persist(); ui.dialog = null; },
+  cat: (v) => { if (ui.openCats.has(v)) ui.openCats.delete(v); else ui.openCats.add(v); },
+  liveopen: () => {
+    const item = items().find((i) => i.ex === ui.active); if (!item) return;
+    const d = draftFor(item);
+    ui.live = { ex: item.ex, phase: "setup", prep: db.settings.prepSec ?? 10, goal: d.reps, kg: d.kg || 0 };
+  },
+  livestep: (v, el) => {
+    const lv = ui.live, f = el.dataset.f, dir = +v, ex = db.exercises[lv.ex];
+    if (f === "prep") lv.prep = Math.min(60, Math.max(0, lv.prep + dir * 5));
+    if (f === "goal") lv.goal = Math.max(5, lv.goal + dir * 5);
+    if (f === "kg") lv.kg = L.stepWeight(ex, lv.kg, dir);
+  },
+  livestart: () => { beepInit(); wake(true); const lv = ui.live; db.settings.prepSec = lv.prep; save(db); liveGo(lv.prep ? "prep" : "hold"); },
+  livestop: () => {
+    const lv = ui.live, item = items().find((i) => i.ex === lv.ex);
+    const held = Math.max(1, Math.round((Date.now() - lv.t) / 1000));
+    if (ui.draft && ui.draft.ex === lv.ex) ui.draft.kg = lv.kg;
+    const r = logSet(item, lv.kg, held); if (!r) return;
+    lv.held = held;
+    if (r.done) { lv.phase = "done"; ui.restEnd = null; beep(660, 0.25); }
+    else { const sec = L.restFor(db, db.exercises[lv.ex]); startRest(sec); liveGo("rest", sec); }
+  },
+  liveskiprest: () => { ui.restEnd = null; liveGo(ui.live.prep ? "prep" : "hold"); },
+  liveend: () => { // stop the exercise here, keep the sets done
+    const lv = ui.live, s = session();
+    if (s && s.entries[lv.ex] && s.entries[lv.ex].sets.length) { s.entries[lv.ex].status = "done"; persist(); }
+    liveClose(); const n = firstOpenItem(); setActive(n ? n.ex : lv.ex);
+  },
+  liveclose: () => {
+    const lv = ui.live;
+    if ((lv.phase === "prep" || lv.phase === "hold") && !confirm("Stop without logging this set?")) return "norender";
+    const done = lv.phase === "done";
+    liveClose(); if (done) { const n = firstOpenItem(); setActive(n ? n.ex : lv.ex); if (n) startRest(db.settings.restSec); }
+  },
   prest: (_, el) => {
     const ex = db.exercises[el.dataset.ex];
     const v = prompt(`Rest after each set of ${ex.name}: seconds or m:ss (e.g. 90 or 2:30). Leave empty for the default ${fmtRest(db.settings.restSec)}.`, ex.rest ? fmtRest(ex.rest) : "");
     if (v == null) return;
     if (v.trim() === "") { delete ex.rest; persist(); return; }
-    const m = v.trim().match(/^(?:(\d+):(\d{1,2})|(\d+))$/);
-    const sec = m ? (m[3] != null ? +m[3] : +m[1] * 60 + +m[2]) : 0;
-    if (sec >= 10 && sec <= 900) { ex.rest = sec; persist(); }
+    const sec = parseRest(v);
+    if (sec) { ex.rest = sec; persist(); }
     else alert("Use seconds (90) or minutes:seconds (1:30), between 10 s and 15 min.");
   },
   prange: (_, el) => {
@@ -675,6 +868,12 @@ document.addEventListener("change", (e) => {
     document.getElementById("ex_range_lbl").textContent = timed ? "Start (s)" : "Reps";
   }
   if (t.id === "xnote") { db.exercises[t.dataset.ex].note = t.value; persist(); }
+  if (t.id === "sh_note") { db.exercises[t.dataset.ex].note = t.value; persist(); }
+  if (t.id === "sh_rest") {
+    const ex = db.exercises[t.dataset.ex], v = t.value.trim();
+    if (v === "") delete ex.rest; else { const sec = parseRest(v); if (sec) ex.rest = sec; else alert("Use seconds (90) or minutes:seconds (1:30), between 10 s and 15 min."); }
+    persist(); act.guide(); render();
+  }
   if (t.id === "gnote") { db.settings.globalNote = t.value; persist(); }
   if (t.id === "syncrepo") { const v = t.value.trim().replace(/^https?:\/\/github.com\//, "").replace(/\.git$/, ""); Sync.setConfig({ repo: v, hash: {} }); }
   if (t.id === "synctoken" && t.value.trim()) { Sync.setConfig({ token: t.value.trim(), err: null, hash: {}, pending: true }); t.value = ""; Sync.flush(db, true); }

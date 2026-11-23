@@ -2,7 +2,7 @@
 // Later: same shape in Firestore (users/{uid}/exercises, workouts, sessions, settings),
 // so only this file changes when we switch.
 import { GUIDES } from "./guides.js";
-import { SEED_VERSION, PROGRAM_VERSION, seedExercises, extraExercises, seedWorkouts, seedSettings } from "./seed.js";
+import { SEED_VERSION, PROGRAM_VERSION, DB_SCALE, seedExercises, extraExercises, seedWorkouts, seedSettings } from "./seed.js";
 
 const KEY = "gymlog.v1";
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -49,8 +49,9 @@ function mergeExercises(db) {
 // new fields (per, repUnit, rest, fixed...) are taken from the seed. The old A-D are kept in db.archive.
 // Bump when guides.js cues change and should replace the saved one-line cues (once)
 const GUIDE_REV = 1;
+const REST_REV = 1; // 1: program exercises get the rest times from the PT how-tos; dumbbell exercises get the dumbbell rack scale (only where nothing is set)
 const PROG_REV = 1; // 1: Low B uses the Prone Cable Leg Curl instead of the machine Leg Curl (2026-11-23)
-const NAME_REV = 1; // 1: exercise names in Title Case (seed exercises only; custom ones untouched)
+const NAME_REV = 2; // 2: also older built-in exercises (chest press, leg press …) in Title Case // 1: exercise names in Title Case (seed exercises only; custom ones untouched)
 const PATCH = ["name", "type", "cue", "per", "repUnit", "repStep", "rest", "fixed", "wstep"];
 function applyProgram(db) {
   if ((db.program || 1) >= PROGRAM_VERSION) return;
@@ -82,7 +83,18 @@ function migrate(db) {
   }
   if ((db.nameRev || 0) < NAME_REV) {
     for (const [id, e] of Object.entries({ ...seedExercises, ...extraExercises })) if (db.exercises[id]) db.exercises[id].name = e.name;
+    const tc = (n) => n.replace(/[A-Za-z][A-Za-z']*/g, (w) => (w.length > 1 && w === w.toUpperCase() ? w : w[0].toUpperCase() + w.slice(1)));
+    for (const [id, x] of Object.entries(db.exercises)) if (!x.custom && !seedExercises[id] && !extraExercises[id]) x.name = tc(x.name);
     db.nameRev = NAME_REV;
+  }
+  if ((db.restRev || 0) < REST_REV) {
+    for (const [id, e] of Object.entries({ ...seedExercises, ...extraExercises })) {
+      const x = db.exercises[id]; if (!x) continue;
+      if (e.rest && !x.rest) x.rest = e.rest;
+      if (e.scale === DB_SCALE && !(x.scale && x.scale.values && x.scale.values.length)) x.scale = clone(DB_SCALE);
+    }
+    if (db.settings.prepSec == null) db.settings.prepSec = 10;
+    db.restRev = REST_REV;
   }
   if ((db.progRev || 0) < PROG_REV) {
     const d = db.workouts && db.workouts.D;
