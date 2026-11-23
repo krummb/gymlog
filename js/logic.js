@@ -47,14 +47,10 @@ export function nextLetter(db) {
   return LETTERS[(i + 1) % 4];
 }
 
-// Which letters are done in the current rotation cycle (since the last A started)
+// Which letters are done in the current round: a round ends when all four are done, then all start unmarked again
 export function cycleDone(db) {
-  const done = finishedSessions(db);
-  const out = new Set();
-  for (let i = done.length - 1; i >= 0; i--) {
-    out.add(done[i].workout);
-    if (done[i].workout === "A") break;
-  }
+  let out = new Set();
+  for (const s of finishedSessions(db)) { out.add(s.workout); if (out.size === LETTERS.length) out = new Set(); }
   return out;
 }
 

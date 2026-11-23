@@ -126,7 +126,8 @@ function drivesBar() {
   const open = L.openSession(db);
   const drives = L.LETTERS.map((l) => {
     const isDone = doneSet.has(l) && !(open && open.workout === l);
-    return `<button class="drive ${l === ui.letter ? "sel" : ""}" data-act="letter" data-v="${l}" aria-label="Workout ${l}${isDone ? ", done" : ""}">${I.disk}${esc(shortName(l))}${isDone ? '<b class="ok">✓</b>' : ""}</button>`;
+    const [a, ...b] = db.workouts[l].name.split(/\s+-\s+/);
+    return `<button class="drive ${l === ui.letter ? "sel" : ""} ${isDone ? "done" : ""}" data-act="letter" data-v="${l}" aria-label="Workout ${l}, ${esc(db.workouts[l].name)}${isDone ? ", done" : ""}"><span class="dl">${l}</span><span class="dn">${esc(a)}${b.length ? `<small>${esc(b.join(" - "))}</small>` : ""}</span></button>`;
   }).join("");
 
   return `<div class="drives">${drives}</div>`;
@@ -161,7 +162,7 @@ function today() {
     } else if (st.status === "skipped") { cls = "skipped"; ic = I.skip; info = "skipped"; }
     if (isActive) { cls += " active"; if (st.status === "todo") ic = I.cur; }
     rows.push(`<button class="row ${cls} ${i % 2 ? "" : "alt"}" data-act="pick" data-v="${it.ex}">
-      <span class="ic">${ic}</span><span class="nm">${esc(ex.name)}${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}${it.today ? '<i class="tag">today</i>' : ""}</span><span>${esc(info)}</span><span>${st.sets.length}/${it.sets}</span></button>`);
+      <span class="ic">${ic}</span><span class="nm"><span class="nt">${esc(ex.name)}</span>${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}${it.today ? '<i class="tag">today</i>' : ""}</span><span>${esc(info)}</span><span>${st.sets.length}/${it.sets}</span></button>`);
   });
 
   const allClosed = doneCount === its.length;
@@ -367,12 +368,29 @@ function programs() {
   }).join("") + `<p class="small">Tap “rest” under a name to set the rest time for that exercise (it applies wherever the exercise is used; default is set in Settings). Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises: “60s” is a fixed hold time (plank); “20s+” is a starting time, then the target is your last best + the step. SS = superset with the next row.</p>`;
 }
 
+const catOf = (id) => { const c = (db.exercises[id] && db.exercises[id].cat) || CATS[id]; return CAT_ORDER.includes(c) ? c : "Other"; };
+function progTags(id) {
+  const ls = L.LETTERS.filter((l) => db.workouts[l].items.some((i) => i.ex === id));
+  return ls.map((l) => `<i class="ptag">${l}</i>`).join("");
+}
+// How-to text (cue, steps, mistakes) and pictures of an exercise
+function howHtml(id) {
+  const ex = db.exercises[id], g = GUIDES[id];
+  return g ? `
+      <p class="gcue">${esc(g.cue)}</p>
+      <div class="glbl">How</div>
+      <ol class="gsteps">${g.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
+      <div class="glbl bad">Common mistakes</div>
+      <p class="gbad">${esc(g.mistakes)}</p>` : `<p class="gcue">${esc(ex.cue)}</p>`;
+}
+const imgsHtml = (id) => `<div class="gimgs gwrap"><div class="guideimg ph">Image coming</div>${[1, 2].map((n) => `<img class="gimg" src="img/${id}-${n}.webp" alt="${esc(db.exercises[id].name)}, picture ${n}" hidden>`).join("")}</div>`;
+
 function exercisesScreen() {
   const inProg = {};
   for (const l of L.LETTERS) for (const it of db.workouts[l].items) (inProg[it.ex] = inProg[it.ex] || []).push(l);
   const groups = new Map(CAT_ORDER.map((c) => [c, []]));
   for (const [id, e] of Object.entries(db.exercises)) {
-    const c = CATS[id] && groups.has(CATS[id]) ? CATS[id] : "Other";
+    const c = catOf(id);
     groups.get(c).push([id, e]);
   }
   const out = [];
@@ -383,15 +401,23 @@ function exercisesScreen() {
     out.push(`<button class="cathead" data-act="cat" data-v="${esc(c)}" aria-expanded="${open}"><span>${open ? "▾" : "▸"} ${esc(c)}</span><span class="rt">${list.length}${n ? ` · <b class="inprog">${n} in program</b>` : ""}</span></button>`);
     if (open) out.push(`<div class="scales">${list.map(([id, e]) => {
       const mode = e.type !== "timed" && e.scale && e.scale.values && e.scale.values.length ? `<span class="m-scale">scale</span>` : `<span class="m-step">step ${L.fmtKg(e.step)} ${e.type === "timed" ? "s" : "kg"}</span>`;
-      const tag = inProg[id] ? `<i class="ptag">${inProg[id].map(shortName).map(esc).join(", ")}</i>` : "";
+      const tag = progTags(id);
       return `<button class="srow" data-act="exdlg" data-ex="${id}"><span class="nm">${esc(e.name)}${tag}</span><span class="rt"><span class="m-wt">${esc(L.currentText(e))}</span> · ${mode} · ${fmtRest(L.restFor(db, e))}</span></button>`;
     }).join("")}</div>`);
   }
   return `<div class="panel"><div class="pathbar">▾ gym:\\exercises\\*.*</div><div class="detail">
-    <p class="small">Tap a group to open it, an exercise to change its name, current weight, rest, step or weight scale. <b class="inprog">Up A</b> etc. = used in that workout.</p>
+    <p class="small">Tap a group to open it, an exercise to change its settings or read its how-to.</p>
+    <p class="small"><i class="ptag">A</i> = used in workout A</p>
     <div class="cats">${out.join("")}</div>
     <button class="btn" data-act="exdlg" data-ex="">+ Add exercise…</button>
   </div></div>`;
+}
+
+function recentHtml() {
+  const last = L.finishedSessions(db).slice(-3).reverse();
+  if (!last.length) return `<p class="small">None yet.</p>`;
+  const f = (iso) => new Date(iso).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).replace(",", "");
+  return `<div class="recent">${last.map((s) => `<div><span class="rd">${esc(f(s.startedAt))}</span> · <b>${s.workout}</b> · ${esc(db.workouts[s.workout] ? db.workouts[s.workout].name : "")}</div>`).join("")}</div>`;
 }
 
 function syncPanel() {
@@ -411,6 +437,11 @@ function settings() {
     <p class="small">Used after the last set of an exercise, before the next one. Rest between sets is set per exercise (Programs, Exercises or the info sheet); exercises without one use this value too.</p>
     <div class="setlabel">Appearance</div>
     <div class="seg">${MODES.map((m) => `<button class="btn ${(db.settings.mode || "auto") === m ? "primary" : ""}" data-act="mode" data-v="${m}">${m[0].toUpperCase() + m.slice(1)}</button>`).join("")}</div>
+    <div class="setlabel">Live timer beeps</div>
+    <div class="seg">${[["off", "Off"], ["on", "On"]].map(([v, t]) => `<button class="btn ${(db.settings.beeps ? "on" : "off") === v ? "primary" : ""}" data-act="beeps" data-v="${v}">${t}</button>`).join("")}</div>
+    <p class="small">The last 3 seconds of every countdown flash yellow either way.</p>
+    <div class="setlabel">Recent workouts</div>
+    ${recentHtml()}
     <div class="setlabel">General note</div>
     <textarea id="gnote" rows="2" class="gnote">${esc(db.settings.globalNote)}</textarea>
     <div class="setlabel">Sync to GitHub</div>
@@ -427,7 +458,7 @@ function settings() {
 function dialog() {
   const d = ui.dialog;
   return `<div class="overlay ${d.sheet ? "sheet" : ""}" data-act="close"><div class="win" role="dialog" aria-label="${esc(d.title)}" data-act="noop">
-    <div class="title">${esc(d.title)}<button class="x" data-act="close" aria-label="Close">×</button></div>
+    <div class="title">${esc(d.title)}${d.tags || ""}<button class="x" data-act="close" aria-label="Close">×</button></div>
     <div class="detail">${d.body}${d.ok === false ? "" : '<button class="btn primary wide" data-act="close">OK</button>'}</div></div></div>`;
 }
 
@@ -435,7 +466,7 @@ function dialog() {
 let liveT = null, actx = null, wakeLock = null, lastBeep = null;
 function beepInit() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (e) {} }
 function beep(f = 880, d = 0.12) {
-  if (!actx) return;
+  if (!actx || !db.settings.beeps) return;
   try { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = f; g.gain.value = 0.25; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d); } catch (e) {}
 }
 async function wake(on) {
@@ -451,18 +482,22 @@ function liveClose() { clearTimeout(liveT); wake(false); ui.live = null; }
 function liveTick() {
   clearTimeout(liveT);
   const lv = ui.live; if (!lv) return;
-  const now = Date.now(), el = document.getElementById("livebig");
+  const now = Date.now(), el = document.getElementById("livebig"), ov = document.querySelector(".overlay.live");
+  let hv = false;
   if (lv.phase === "prep" || lv.phase === "rest") {
     const left = Math.ceil((lv.end - now) / 1000);
     if (left <= 0) { liveGo(lv.phase === "rest" && lv.prep ? "prep" : "hold"); return; }
     if (left <= 3 && lastBeep !== left) { lastBeep = left; beep(660, 0.1); }
+    hv = left <= 3;
     if (el) el.textContent = fmtClock(left);
   } else if (lv.phase === "hold") {
     const e = Math.floor((now - lv.t) / 1000), left = lv.goal - e;
     if (left <= 0 && !lv.goalHit) { lv.goalHit = true; beep(1046, 0.15); setTimeout(() => beep(1046, 0.15), 220); render(); return; }
     else if (left > 0 && left <= 3 && lastBeep !== left) { lastBeep = left; beep(660, 0.08); }
+    hv = left > 0 && left <= 3;
     if (el) el.textContent = left > 0 ? fmtClock(left) : "+" + fmtClock(-left);
   }
+  if (ov) ov.classList.toggle("hiviz", hv);
   liveT = setTimeout(liveTick, 200);
 }
 function liveView() {
@@ -609,13 +644,7 @@ const act = {
     if (!ui.active || ui.active === WARM) return "norender";
     const ex = db.exercises[ui.active], g = GUIDES[ui.active];
     const per = L.perText(ex);
-    const imgs = [1, 2].map((n) => `<img class="gimg" src="img/${ui.active}-${n}.webp" alt="${esc(ex.name)}, picture ${n}" hidden>`).join("");
-    const how = g ? `
-      <p class="gcue">${esc(g.cue)}</p>
-      <div class="glbl">How</div>
-      <ol class="gsteps">${g.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
-      <div class="glbl bad">Common mistakes</div>
-      <p class="gbad">${esc(g.mistakes)}</p>` : `<p class="gcue">${esc(ex.cue)}</p>`;
+    const how = howHtml(ui.active);
     // Full-height sheet: text first (readable in the top part of the screen), picture below, blank space last so the picture can be scrolled up into reach
     const id = ui.active, s = session();
     const logged = s && s.entries[id] ? s.entries[id].sets.length : 0;
@@ -637,7 +666,7 @@ const act = {
       <div class="alts">${altHtml}</div>
       <div class="glbl">Note</div>
       <textarea id="sh_note" data-ex="${id}" rows="3" placeholder="seat height, notch, how it felt…">${esc(ex.note)}</textarea>
-      <div class="gimgs gwrap"><div class="guideimg ph">Image coming</div>${imgs}</div>
+      ${imgsHtml(ui.active)}
       <div class="gspace"></div>` };
   },
   mode: (v) => { db.settings.mode = v; persist(); applyMode(); },
@@ -648,7 +677,8 @@ const act = {
     const timed = e.type === "timed";
     const cur = e.last ? (timed ? e.last.top : e.last.kg) : "";
     const letters = L.LETTERS.map((l) => `<label><input type="checkbox" class="ex_in" value="${l}"> ${l}</label>`).join("");
-    ui.dialog = { title: isNew ? "Add exercise" : e.name, ok: false, body: `
+    const cat = isNew ? "Other" : catOf(id);
+    ui.dialog = { title: isNew ? "Add exercise" : e.name, tags: isNew ? "" : progTags(id), ok: false, body: `
       <div class="frow"><label for="ex_name">Name</label><input id="ex_name" type="text" value="${esc(e.name)}" placeholder="e.g. Cable fly"></div>
       ${isNew ? `<div class="frow"><label for="ex_type">Type</label><select id="ex_type" data-act="extype"><option value="weight">Weight (machine / free)</option><option value="bodyweight">Bodyweight (reps)</option><option value="timed">Timed (seconds)</option></select></div>` : ""}
       <div class="frow"><label for="ex_cur">${timed ? "Current best (s)" : "Current weight (kg)"}</label><input id="ex_cur" type="text" inputmode="decimal" value="${cur === null ? "" : esc(cur)}" placeholder="${timed ? "e.g. 30" : "e.g. 25"}"></div>
@@ -659,12 +689,14 @@ const act = {
         <label class="lbl" for="sc_vals">Weight scale (kg, optional)</label>
         <textarea id="sc_vals" rows="3" placeholder="Weights the machine can select, lowest first, separated by spaces. Empty = fixed step.">${esc(e.scale ? e.scale.values.join("  ") : "")}</textarea>
       </div>
+      <div class="frow"><label for="ex_cat">Category</label><select id="ex_cat">${CAT_ORDER.map((c) => `<option ${c === cat ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div>
       <div class="frow"><label for="ex_cue">Form cue</label><input id="ex_cue" type="text" value="${esc(e.cue)}" placeholder="one line, optional"></div>
       ${isNew ? `<div class="frow"><label for="ex_range" id="ex_range_lbl">Reps</label><input id="ex_range" type="text" value="8-12" placeholder="8-12"></div>
       <div class="lbl">Add to workout</div><div class="checks">${letters}</div>` : ""}
       <button class="btn primary wide" data-act="exsave" data-ex="${esc(id)}">Save</button>
       <button class="btn wide" data-act="close">Cancel</button>
-      ${!isNew && e.custom ? `<button class="btn wide" data-act="exdel" data-ex="${esc(id)}">Delete this exercise</button>` : ""}` };
+      ${!isNew && e.custom ? `<button class="btn wide" data-act="exdel" data-ex="${esc(id)}">Delete this exercise</button>` : ""}
+      ${isNew ? "" : `<div class="howsep">How-to</div>${howHtml(id)}${REST_TEXT[id] ? `<p class="small">Recommended rest: ${esc(REST_TEXT[id])}</p>` : ""}${imgsHtml(id)}`}` };
   },
   extype: () => "norender",
   exsave: (_, el) => {
@@ -693,6 +725,8 @@ const act = {
       e = db.exercises[exId] = { name, type, step, cue: "", note: "", last: null, scale: null, custom: true };
     } else e = db.exercises[id];
     e.name = name; e.step = step; e.cue = $("#ex_cue").value.trim(); e.scale = scale;
+    const cat = $("#ex_cat").value;
+    if (cat && cat !== (CATS[exId] && CAT_ORDER.includes(CATS[exId]) ? CATS[exId] : "Other")) e.cat = cat; else delete e.cat;
     const restN = parseInt($("#ex_rest").value, 10);
     if (restN > 0) e.rest = restN; else delete e.rest;
     if (cur !== null) {
@@ -741,6 +775,7 @@ const act = {
       <button class="btn primary wide" data-act="premovenow" data-l="${l}" data-i="${i}">Remove</button><button class="btn wide" data-act="close">Cancel</button>` };
   },
   premovenow: (_, el) => { db.workouts[el.dataset.l].items.splice(+el.dataset.i, 1); persist(); ui.dialog = null; },
+  beeps: (v) => { db.settings.beeps = v === "on"; persist(); },
   cat: (v) => { if (ui.openCats.has(v)) ui.openCats.delete(v); else ui.openCats.add(v); },
   liveopen: () => {
     const item = items().find((i) => i.ex === ui.active); if (!item) return;

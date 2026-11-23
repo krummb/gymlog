@@ -228,3 +228,27 @@ textarea.gnote, #sh_note { width:100%; border:1px solid var(--line); background:
 .prep { color:var(--amber); } .hold { color:var(--blue); } .over { color:var(--green); } .rest { color:var(--rest); }
 .lphase.over, .lbig.over { background:none; }
 .lsets { color:var(--green); font:15px "Courier New", monospace; }
+
+/* 0.12.1 */
+.row .nm { display:flex; align-items:center; min-width:0; }
+.row .nm .nt { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.row .nm .tag { flex:none; }
+footer .drives .drive { height:40px; justify-content:flex-start; gap:6px; padding:0 6px 0 4px; }
+.drive .dl { font:bold 18px "Courier New", monospace; color:var(--teal); width:14px; text-align:center; flex:none; }
+.drive .dn { display:flex; flex-direction:column; align-items:flex-start; line-height:1.1; min-width:0; text-align:left; }
+.drive .dn small { font-weight:normal; font-size:11px; color:var(--grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.drive.done { border:2px solid var(--green); }
+.drive.sel .dn small { color:inherit; opacity:.8; }
+.srow { display:flex; flex-wrap:wrap; justify-content:space-between; column-gap:8px; row-gap:1px; padding:5px 8px; }
+.srow .nm { flex:0 1 auto; white-space:normal; }
+.srow .rt { flex:0 0 auto; margin-left:auto; }
+.overlay .title .ptag, .srow .ptag { margin-left:6px; }
+.howsep { margin-top:12px; padding-top:8px; border-top:1px solid var(--line); font-weight:bold; color:var(--blue); }
+.recent { display:flex; flex-direction:column; gap:2px; }
+.recent .rd { color:var(--grey); }
+.recent b { color:var(--teal); }
+/* live timer: last 3 s of a countdown in hi-viz yellow, pulsing */
+.overlay.live.hiviz .win, .overlay.live.hiviz .title, .overlay.live.hiviz .detail { background:#FFE600; color:#000; animation:hv .5s steps(1) infinite; }
+.overlay.live.hiviz .lbig, .overlay.live.hiviz .lphase, .overlay.live.hiviz .lsub, .overlay.live.hiviz .lsets, .overlay.live.hiviz .x { color:#000; }
+.overlay.live.hiviz .btn { background:transparent; color:#000; border:2px solid #000; }
+@keyframes hv { 50% { background:#FFC400; } }
