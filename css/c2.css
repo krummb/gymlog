@@ -252,3 +252,6 @@ footer .drives .drive { height:40px; justify-content:flex-start; gap:6px; paddin
 .overlay.live.hiviz .lbig, .overlay.live.hiviz .lphase, .overlay.live.hiviz .lsub, .overlay.live.hiviz .lsets, .overlay.live.hiviz .x { color:#000; }
 .overlay.live.hiviz .btn { background:transparent; color:#000; border:2px solid #000; }
 @keyframes hv { 50% { background:#FFC400; } }
+/* F-keys: key label small in the top-left corner, action name as the main text */
+.fkeys .btn { position:relative; font-size:13px; padding-top:6px; }
+.fkeys .btn .fk { position:absolute; top:2px; left:4px; font:normal 9.5px "Courier New", monospace; color:var(--teal); }

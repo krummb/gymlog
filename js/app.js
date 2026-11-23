@@ -235,11 +235,11 @@ function stopEarly() {
 
 function fkeys() {
   return `<div class="fkeys">
-      <button class="btn" data-act="guide">F3 Guide</button>
-      <button class="btn" data-act="addtoday">F4 Add</button>
-      <button class="btn" data-act="rest">F5 Timer</button>
-      <button class="btn" data-act="swap">F6 Swap</button>
-      <button class="btn" data-act="skip">${stopEarly() ? "F8 Done" : "F8 Skip"}</button>
+      <button class="btn" data-act="guide"><i class="fk">F3</i>Guide</button>
+      <button class="btn" data-act="addtoday"><i class="fk">F4</i>Add</button>
+      <button class="btn" data-act="rest"><i class="fk">F5</i>Timer</button>
+      <button class="btn" data-act="swap"><i class="fk">F6</i>Swap</button>
+      <button class="btn" data-act="skip"><i class="fk">F8</i>${stopEarly() ? "Done" : "Skip"}</button>
     </div>`;
 }
 

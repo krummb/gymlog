@@ -50,7 +50,8 @@ function mergeExercises(db) {
 // Bump when guides.js cues change and should replace the saved one-line cues (once)
 const GUIDE_REV = 1;
 const REST_REV = 1; // 1: program exercises get the rest times from the PT how-tos; dumbbell exercises get the dumbbell rack scale (only where nothing is set)
-const PROG_REV = 2; // 2: PT review 2026-11-23: deadlift 3 sets, farmer's carry 40-50 m, Glute Press merged into the old glute_bridge entry (keeps its 46 kg history), shorter leg-curl cue
+const PROG_REV = 3; // 3: Hammer Curl named "DB Hammer Curl" (user had renamed it to Cable by mistake)
+// 2 was: // 2: PT review 2026-11-23: deadlift 3 sets, farmer's carry 40-50 m, Glute Press merged into the old glute_bridge entry (keeps its 46 kg history), shorter leg-curl cue
 // 1: Low B uses the Prone Cable Leg Curl instead of the machine Leg Curl (2026-11-23)
 const NAME_REV = 2; // 2: also older built-in exercises (chest press, leg press …) in Title Case // 1: exercise names in Title Case (seed exercises only; custom ones untouched)
 const PATCH = ["name", "type", "cue", "per", "repUnit", "repStep", "rest", "fixed", "wstep"];
@@ -114,6 +115,11 @@ function migrate(db) {
       gb.type = "weight"; gb.name = gp.name; gb.cue = gp.cue; gb.rest = gb.rest || gp.rest;
       delete db.exercises.glute_press;
     } else if (gp && !gb) { db.exercises.glute_bridge = gp; delete db.exercises.glute_press; }
+    db.progRev = 2;
+  }
+  if ((db.progRev || 0) < 3) {
+    const hc = db.exercises.hammer_curl;
+    if (hc && /^(Cable )?Hammer Curl$/i.test(hc.name)) hc.name = "DB Hammer Curl";
     db.progRev = PROG_REV;
   }
   return db;

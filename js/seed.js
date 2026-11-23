@@ -64,7 +64,7 @@ export const extraExercises = {
   one_arm_cable_row:    { name: "One-Arm Cable Row", type: "weight", step: 2.5, per: "side", rest: 75 },
   overhead_triceps_ext: { name: "Overhead Cable Triceps Extension", type: "weight", step: 2.5, rest: 75 },
   incline_db_curl:      { name: "Incline DB Curl", type: "weight", scale: DB_SCALE, step: 1, per: "hand", rest: 75 },
-  hammer_curl:          { name: "Hammer Curl", type: "weight", scale: DB_SCALE, step: 1, per: "hand", rest: 75 },
+  hammer_curl:          { name: "DB Hammer Curl", type: "weight", scale: DB_SCALE, step: 1, per: "hand", rest: 75 },
   cable_pull_through:   { name: "Cable Pull-Through", type: "weight", step: 2.5, rest: 75 },
   cable_crunch:         { name: "Cable Crunch", type: "weight", step: 2.5, rest: 75 },
   pallof_press:         { name: "Pallof Press", type: "weight", step: 2.5, per: "side", rest: 50 },
