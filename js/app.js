@@ -176,13 +176,20 @@ function exhead(title, sub) {
     <button class="btn nav" data-act="nav" data-v="1" aria-label="Next exercise">▸</button></div>`;
 }
 
+// Some sets logged but fewer than planned: F8 ends the exercise early (keeps the sets) instead of skipping it
+function stopEarly() {
+  const s = session();
+  const e = s && ui.active && ui.active !== WARM ? s.entries[ui.active] : null;
+  return !!(e && e.sets.length && L.itemState(s, items().find((i) => i.ex === ui.active) || { ex: ui.active, sets: 99 }).status === "todo");
+}
+
 function fkeys() {
   return `<div class="fkeys">
       <button class="btn" data-act="guide">F3 Guide</button>
       <button class="btn" data-act="addtoday">F4 Add</button>
       <button class="btn" data-act="rest">F5 Timer</button>
       <button class="btn" data-act="swap">F6 Swap</button>
-      <button class="btn" data-act="skip">F8 Skip</button>
+      <button class="btn" data-act="skip">${stopEarly() ? "F8 Done" : "F8 Skip"}</button>
     </div>`;
 }
 
@@ -412,7 +419,8 @@ const act = {
   skip: () => {
     if (!ui.active || ui.active === WARM) return "norender";
     const s = ensureSession(); if (!s) return;
-    const e = L.entryFor(s, ui.active); e.status = "skipped"; persist();
+    const early = stopEarly();
+    const e = L.entryFor(s, ui.active); e.status = early ? "done" : "skipped"; persist();
     const n = firstOpenItem(); setActive(n ? n.ex : ui.active);
   },
   swap: () => {
