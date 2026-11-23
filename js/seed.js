@@ -35,6 +35,7 @@ export const seedExercises = {
   // Low B – Hinge
   deadlift:         { name: "Barbell Deadlift", type: "weight", step: 5, rest: 180, start: 40, cue: "Bar over mid-foot, flat back, brace. Push the floor away, finish with your hips. Film it from the side." },
   db_bulgarian:     { name: "DB Bulgarian Split Squat", type: "weight", step: 1, per: "leg", start: 5, cue: "Rear foot on the bench, front foot far enough forward. Drop straight down, push through the front heel." },
+  prone_leg_curl:   { name: "Prone Cable Leg Curl", type: "weight", step: 2.5, per: "leg", rest: 75, start: 10 },
   ham_curl:         { name: "Leg Curl (Machine)", type: "weight", step: 2.5, cue: "Adjust to fit your legs. Curl the pad up, return slowly. Hips still." },
   hip_thrust:       { name: "Barbell Hip Thrust", type: "weight", step: 2.5, start: 40, cue: "Upper back on the bench, bar over your hips. Drive through your heels, squeeze at the top, chin tucked." },
   farmers_carry:    { name: "Farmer's Carry", type: "weight", step: 1, per: "hand", repUnit: "m", repStep: 5, start: 12, cue: "Tall posture, shoulders down, short steady steps. Don't let the weights swing." },
@@ -66,6 +67,8 @@ export const extraExercises = {
   cable_crunch:         { name: "Cable Crunch", type: "weight", step: 2.5, rest: 75 },
   pallof_press:         { name: "Pallof Press", type: "weight", step: 2.5, per: "side", rest: 50 },
   db_reverse_lunge:     { name: "DB Reverse Lunge", type: "weight", step: 1, per: "leg", rest: 105 },
+  db_hip_thrust:        { name: "DB Hip Thrust", type: "weight", step: 1, rest: 105, start: 20, cue: "One dumbbell across your hip crease, upper back on the bench. Drive through your heels, squeeze your glutes at the top, chin tucked." },
+  glute_press:          { name: "Glute Press (Machine)", type: "weight", step: 2.5, rest: 105, cue: "Adjust the machine to fit. Push through your heels, squeeze your glutes, return slowly. Start light and adjust after set 1." },
   db_step_up:           { name: "DB Step-Up", type: "weight", step: 1, per: "leg", rest: 105 },
 };
 
@@ -75,7 +78,7 @@ export const seedWorkouts = {
   A: { name: "Up A - Push", items: [it("db_bench", 3, 8, 10), it("seated_row", 3, 10, 12), it("db_shoulder_press", 3, 8, 10), it("cable_lateral", 3, 12, 15, { ss: true }), it("triceps_pushdown", 3, 10, 12, { ss: true }), it("face_pull", 2, 12, 15)] },
   B: { name: "Low A - Quads", items: [it("goblet_squat", 3, 8, 12), it("db_rdl", 3, 8, 10), it("db_split_squat", 2, 8, 10), it("calf_raise", 3, 12, 15), it("hanging_knee_raise", 3, 8, 12)] },
   C: { name: "Up B - Pull", items: [it("pull_up", 4, 2, 3), it("incline_db_press", 3, 8, 12), it("one_arm_row", 3, 8, 12), it("reverse_fly", 3, 12, 15, { ss: true }), it("lateral_raise", 3, 12, 15, { ss: true }), it("cable_curl", 2, 10, 12), it("dips", 2, 6, 8, { opt: true })] },
-  D: { name: "Low B - Hinge", items: [it("deadlift", 2, 5, 8), it("db_bulgarian", 2, 8, 10), it("ham_curl", 3, 10, 12), it("hip_thrust", 3, 10, 12), it("farmers_carry", 3, 30, 30), it("plank", 2, 60, 60)] },
+  D: { name: "Low B - Hinge", items: [it("deadlift", 2, 5, 8), it("db_bulgarian", 2, 8, 10), it("prone_leg_curl", 3, 12, 15), it("hip_thrust", 3, 10, 12), it("farmers_carry", 3, 30, 30), it("plank", 2, 60, 60)] },
 };
 
 export const seedSettings = {

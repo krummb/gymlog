@@ -49,6 +49,7 @@ function mergeExercises(db) {
 // new fields (per, repUnit, rest, fixed...) are taken from the seed. The old A-D are kept in db.archive.
 // Bump when guides.js cues change and should replace the saved one-line cues (once)
 const GUIDE_REV = 1;
+const PROG_REV = 1; // 1: Low B uses the Prone Cable Leg Curl instead of the machine Leg Curl (2026-11-23)
 const NAME_REV = 1; // 1: exercise names in Title Case (seed exercises only; custom ones untouched)
 const PATCH = ["name", "type", "cue", "per", "repUnit", "repStep", "rest", "fixed", "wstep"];
 function applyProgram(db) {
@@ -82,6 +83,11 @@ function migrate(db) {
   if ((db.nameRev || 0) < NAME_REV) {
     for (const [id, e] of Object.entries({ ...seedExercises, ...extraExercises })) if (db.exercises[id]) db.exercises[id].name = e.name;
     db.nameRev = NAME_REV;
+  }
+  if ((db.progRev || 0) < PROG_REV) {
+    const d = db.workouts && db.workouts.D;
+    if (d) d.items = d.items.map((i) => (i.ex === "ham_curl" ? { ex: "prone_leg_curl", sets: 3, min: 12, max: 15 } : i));
+    db.progRev = PROG_REV;
   }
   return db;
 }
