@@ -305,8 +305,8 @@ function detail() {
   const partner = partnerOf(item);
   const alts = (ALTS[item.ex] || []).filter((id) => db.exercises[id] && !its.some((i) => i.ex === id)).slice(0, 2).map((id) => db.exercises[id].name);
   // PT target from next.json, shown until the exercise has been logged after the PT's review
-  const nx = ptTarget(item.ex);
-  const hint = nx ? `PT: ${nx.target}${nx.note ? " · " + nx.note : ""}` : timed
+  const ptx = ptLine(item, t);
+  const hint = ptx ? ptx : timed
     ? (ex.fixed ? `Hold ${item.min} s. Once it is easy, add weight with the + button.` : `Next time: beat your best by +${ex.step} s`)
     : partner ? `Superset with ${db.exercises[partner.ex].name}: alternate sets.`
       : alts.length ? `Alternative: ${alts.join(" or ")} (F6 Swap).` : "";
@@ -374,6 +374,23 @@ function ptTarget(id) {
   if (!t) return null;
   const last = ex && ex.last && !ex.last.baseline && ex.last.date ? ex.last.date.slice(0, 10) : "";
   return !last || last <= t.setOn ? t : null;
+}
+// PT advice without sentences that only repeat the last results (the "Last:" line shows those)
+const ptAdvice = (note) => (note || "").split(/(?<=\.)\s+(?=[A-Z])/).filter((s) => !/^(Reps were|Last logged|Typed start)\b/i.test(s.trim())).join(" ").trim();
+// Does the PT target ("40 kg, 3 × 5-8", "bodyweight, 4 × 3", "2 × 65-70 s") say the same as the app's own target?
+function ptSame(tx, item, t) {
+  const kg = (tx.match(/(\d+(?:[.,]\d+)?)\s*kg/) || [])[1];
+  const m = tx.match(/(\d+)\s*[×x]\s*(\d+)(?:\s*[-–]\s*(\d+))?/);
+  if (!m) return false;
+  const sets = +m[1], lo = +m[2], hi = m[3] ? +m[3] : lo;
+  const appKg = t.kg || 0, ptKg = kg ? parseFloat(kg.replace(",", ".")) : 0;
+  return sets === item.sets && lo === item.min && hi === item.max && ptKg === appKg;
+}
+function ptLine(item, t) {
+  const n = ptTarget(item.ex); if (!n) return "";
+  const adv = ptAdvice(n.note), same = ptSame(n.target || "", item, t);
+  if (same && !adv) return "";
+  return "PT: " + [same ? "" : n.target, adv].filter(Boolean).join(" · ");
 }
 const catOf = (id) => { const c = (db.exercises[id] && db.exercises[id].cat) || CATS[id]; return CAT_ORDER.includes(c) ? c : "Other"; };
 function progTags(id) {

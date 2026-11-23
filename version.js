@@ -1,2 +1,2 @@
 // Single place for the app version. Bump on every release; the offline cache name follows it.
-self.APP_VERSION = "0.13.0";
+self.APP_VERSION = "0.13.1";
