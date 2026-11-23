@@ -304,7 +304,9 @@ function detail() {
   const its = items();
   const partner = partnerOf(item);
   const alts = (ALTS[item.ex] || []).filter((id) => db.exercises[id] && !its.some((i) => i.ex === id)).slice(0, 2).map((id) => db.exercises[id].name);
-  const hint = timed
+  // PT target from next.json, shown until the exercise has been logged after the PT's review
+  const nx = ptTarget(item.ex);
+  const hint = nx ? `PT: ${nx.target}${nx.note ? " · " + nx.note : ""}` : timed
     ? (ex.fixed ? `Hold ${item.min} s. Once it is easy, add weight with the + button.` : `Next time: beat your best by +${ex.step} s`)
     : partner ? `Superset with ${db.exercises[partner.ex].name}: alternate sets.`
       : alts.length ? `Alternative: ${alts.join(" or ")} (F6 Swap).` : "";
@@ -367,6 +369,12 @@ function programs() {
   }).join("") + `<p class="small">Tap “rest” under a name to set the rest time for that exercise (it applies wherever the exercise is used; default is set in Settings). Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises: “60s” is a fixed hold time (plank); “20s+” is a starting time, then the target is your last best + the step. SS = superset with the next row.</p>`;
 }
 
+function ptTarget(id) {
+  const n = Sync.nextTargets(), t = n && n.targets && n.targets[id], ex = db.exercises[id];
+  if (!t) return null;
+  const last = ex && ex.last && !ex.last.baseline && ex.last.date ? ex.last.date.slice(0, 10) : "";
+  return !last || last <= t.setOn ? t : null;
+}
 const catOf = (id) => { const c = (db.exercises[id] && db.exercises[id].cat) || CATS[id]; return CAT_ORDER.includes(c) ? c : "Other"; };
 function progTags(id) {
   const ls = L.LETTERS.filter((l) => db.workouts[l].items.some((i) => i.ex === id));
@@ -427,6 +435,7 @@ function syncPanel() {
     <div class="noterow"><label for="syncrepo">Repo</label><input id="syncrepo" value="${esc(c.repo)}" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
     <div class="noterow"><label for="synctoken">Token</label><input id="synctoken" type="password" value="" placeholder="${on ? "saved (paste to replace)" : "github_pat_…"}" autocomplete="off"></div>
     <p class="small">${status}</p>
+    <p class="small">PT targets: ${(() => { const n = Sync.nextTargets(); return n ? `${Object.keys(n.targets || {}).length} exercises, updated ${esc(String(n.updated || "").replace("T", " "))}` : "none loaded yet"; })()}</p>
     <button class="btn" data-act="syncnow">Sync now</button>${on ? '<button class="btn" data-act="syncoff">Remove token</button>' : ""}`;
 }
 
@@ -831,7 +840,7 @@ const act = {
     if (v != null && m && +m[1] > 0 && (m[2] == null || +m[2] >= +m[1])) { it.min = +m[1]; it.max = m[2] == null ? +m[1] : +m[2]; persist(); }
     else if (v != null) alert("Use the form 8-10 (or a single number).");
   },
-  syncnow: () => { if (!Sync.configured()) { alert("Paste the token first."); return; } Sync.flush(db, true); },
+  syncnow: () => { if (!Sync.configured()) { alert("Paste the token first."); return; } Sync.flush(db, true); Sync.fetchNext().then(() => render()); },
   syncoff: () => { if (confirm("Remove the token from this phone? Nothing in the repo is deleted.")) Sync.setConfig({ token: "", pending: false, err: null }); },
   close: () => { ui.dialog = null; },
   noop: () => "norender",
@@ -931,10 +940,12 @@ document.addEventListener("pointerdown", (e) => {
 ["pointerup", "pointercancel", "pointerleave"].forEach((t) => document.addEventListener(t, () => clearTimeout(holdT)));
 
 Sync.setListener(() => { if (ui.screen === "settings" && !ui.dialog) render(); });
-addEventListener("online", () => { if (Sync.config().pending) Sync.flush(db); });
+addEventListener("online", () => { if (Sync.config().pending) Sync.flush(db); Sync.fetchNext().then((ch) => { if (ch) render(); }); });
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && Sync.config().pending) Sync.flush(db); });
 pickLetter();
 render();
 if (Sync.configured() && Sync.config().pending) Sync.flush(db);
+Sync.fetchNext().then((ch) => { if (ch) render(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") Sync.fetchNext().then((ch) => { if (ch) render(); }); });
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});

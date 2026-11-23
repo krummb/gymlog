@@ -96,3 +96,21 @@ export function touch() {
 }
 
 export const busyNow = () => busy;
+
+// PT targets for the next session: next.json in the same repo (written by the dev chat from the PT doc).
+// Read with the same token, kept on the phone for offline use (own key, not part of backups).
+const NKEY = "gymlog.next.v1";
+export const nextTargets = () => { try { return JSON.parse(localStorage.getItem(NKEY)) || null; } catch (e) { return null; } };
+export async function fetchNext() {
+  const c = config();
+  if (!c.token || !c.repo || !navigator.onLine) return false;
+  try {
+    const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/next.json?ref=${encodeURIComponent(c.branch)}`,
+      { headers: { Authorization: `Bearer ${c.token}`, Accept: "application/vnd.github.raw+json", "X-GitHub-Api-Version": "2022-11-28" }, cache: "no-store" });
+    if (!r.ok) return false;
+    const txt = await r.text(); JSON.parse(txt);
+    const changed = localStorage.getItem(NKEY) !== txt;
+    try { localStorage.setItem(NKEY, txt); } catch (e) {}
+    return changed;
+  } catch (e) { return false; }
+}
