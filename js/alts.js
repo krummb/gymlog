@@ -1,5 +1,7 @@
 // Alternative exercises shown in the hint line (ids, best first). Only shown if they exist and are not already in today's workout.
 export const ALTS = {
+  skater_bound: ["slider_lateral_push"], slider_lateral_push: ["skater_bound"], cardio_z2: ["backpack_walk"], backpack_walk: ["cardio_z2"],
+  db_sl_rdl: ["db_rdl"], copenhagen_short: ["side_plank"], side_plank: ["copenhagen_short"], cable_hip_abduction: [], low_walk: [],
   db_bench: ["bench_press", "push_up"], seated_row: ["one_arm_cable_row", "inverted_row"], db_shoulder_press: ["overhead_press"],
   cable_lateral: ["lateral_raise"], triceps_pushdown: ["overhead_triceps_ext"], face_pull: ["reverse_fly"],
   goblet_squat: ["back_squat"], db_rdl: ["barbell_rdl"], db_split_squat: ["db_reverse_lunge", "db_step_up"],
@@ -16,7 +18,7 @@ export const ALTS = {
 };
 
 // Groups for the Exercises screen (ids not listed fall under "Other")
-export const CAT_ORDER = ["Chest & push", "Back & pull", "Shoulders", "Arms", "Legs: squat & lunge", "Legs: hinge & glutes", "Core & carry", "Other"];
+export const CAT_ORDER = ["Chest & push", "Back & pull", "Shoulders", "Arms", "Legs: squat & lunge", "Legs: hinge & glutes", "Balance & skating", "Core & carry", "Cardio", "Other"];
 const C = (cat, ids) => Object.fromEntries(ids.map((i) => [i, cat]));
 export const CATS = {
   ...C("Chest & push", ["db_bench", "incline_db_press", "bench_press", "push_up", "cable_fly", "dips", "weighted_dips", "chest_press"]),
@@ -25,6 +27,9 @@ export const CATS = {
   ...C("Arms", ["triceps_pushdown", "overhead_triceps_ext", "cable_curl", "incline_db_curl", "hammer_curl", "biceps_curl"]),
   ...C("Legs: squat & lunge", ["goblet_squat", "back_squat", "db_split_squat", "db_bulgarian", "db_reverse_lunge", "db_step_up", "leg_press", "leg_extension", "calf_raise"]),
   ...C("Legs: hinge & glutes", ["deadlift", "trap_bar_deadlift", "db_rdl", "barbell_rdl", "prone_leg_curl", "ham_curl", "back_extension", "cable_pull_through", "hip_thrust", "db_hip_thrust", "glute_bridge"]),
+  ...C("Balance & skating", ["single_leg_balance", "copenhagen_short", "copenhagen_long", "cable_hip_abduction", "tibialis_raise", "skater_bound", "slider_lateral_push", "low_walk"]),
+  ...C("Cardio", ["cardio_4x4", "cardio_z2", "backpack_walk"]),
+  db_sl_rdl: "Legs: hinge & glutes", bfr_leg_extension: "Legs: squat & lunge", side_plank: "Core & carry",
   ...C("Core & carry", ["plank", "hanging_knee_raise", "ab_wheel", "cable_crunch", "pallof_press", "farmers_carry"]),
 };
 
@@ -37,5 +42,7 @@ export const REST_TEXT = {
   ...R("Superset: no rest between the pair, 60–90 s after it", ["cable_lateral", "triceps_pushdown", "reverse_fly", "lateral_raise"]),
   ...R("60–90 s per side", ["one_arm_row", "one_arm_cable_row"]),
   db_split_squat: "about 90 s, after both legs", db_bulgarian: "90–120 s, after both legs", prone_leg_curl: "60–90 s, after both legs",
-  farmers_carry: "about 90 s", plank: "about 60 s", pallof_press: "45–60 s per side",
+  farmers_carry: "about 90 s", single_leg_balance: "30 s between legs", copenhagen_short: "45–60 s per side", copenhagen_long: "60 s per side",
+  cable_hip_abduction: "45–60 s per side", side_plank: "30–45 s per side", tibialis_raise: "45–60 s", skater_bound: "2 min", slider_lateral_push: "60 s per side",
+  low_walk: "60–90 s", db_sl_rdl: "60–90 s per leg", cardio_4x4: "3 min easy between intervals", cardio_z2: "continuous", backpack_walk: "continuous", bfr_leg_extension: "30 s between sets, cuffs stay on", plank: "about 60 s", pallof_press: "45–60 s per side",
 };

@@ -2,7 +2,7 @@
 // Later: same shape in Firestore (users/{uid}/exercises, workouts, sessions, settings),
 // so only this file changes when we switch.
 import { GUIDES } from "./guides.js";
-import { SEED_VERSION, PROGRAM_VERSION, DB_SCALE, seedExercises, extraExercises, seedWorkouts, seedSettings } from "./seed.js";
+import { SEED_VERSION, PROGRAM_VERSION, DB_SCALE, seedExercises, extraExercises, skatingWorkouts, seedWorkouts, seedSettings } from "./seed.js";
 
 const KEY = "gymlog.v1";
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -134,6 +134,7 @@ function migrate(db) {
     db.activeProgram = "fw4";
     for (const s of Object.values(db.sessions)) if (!s.program) s.program = old && old.savedAt && s.startedAt < old.savedAt ? "mx4" : "fw4";
   }
+  if (!db.programs.sk4 && !db.skatingAdded) { db.programs.sk4 = { name: "Skating (pre-season)", code: "SK4", workouts: clone(skatingWorkouts) }; db.skatingAdded = true; }
   if (!db.programs[db.activeProgram]) db.activeProgram = Object.keys(db.programs)[0];
   linkActive(db);
   return db;

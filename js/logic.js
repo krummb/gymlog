@@ -91,7 +91,7 @@ export function target(db, item) {
 export function targetText(db, item) {
   const ex = db.exercises[item.ex];
   const t = target(db, item);
-  if (ex.type === "timed") return `${item.sets} × ${t.reps} s${ex.fixed && t.kg ? " +" + fmtKg(t.kg) + "kg" : ""}`;
+  if (ex.type === "timed") return `${item.sets} × ${t.reps >= 120 ? Math.floor(t.reps / 60) + ":" + String(t.reps % 60).padStart(2, "0") : t.reps + " s"}${ex.fixed && t.kg ? " +" + fmtKg(t.kg) + "kg" : ""}`;
   const range = `${item.sets} × ${rangeText(ex, item, true)}`;
   if (t.first) return ex.type === "weight" ? `new · ${range}` : `BW · ${range}`;
   if (t.kg == null || t.kg === 0) return `BW · ${range}`;

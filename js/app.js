@@ -220,7 +220,7 @@ function logSet(item, kg, reps) {
   const ex = db.exercises[item.ex];
   const p = plan(item);
   const e = L.entryFor(s, item.ex);
-  e.sets.push({ kg: ex.type === "timed" && !ex.fixed ? null : (kg || 0), reps });
+  e.sets.push({ kg: ex.type === "timed" && (!ex.fixed || ex.noKg) ? null : (kg || 0), reps });
   const done = e.sets.length >= item.sets;
   if (done) e.status = "done";
   persist();
@@ -281,13 +281,13 @@ function detail() {
 
   const hand = L.perHand(ex) ? "/hand" : "";
   const tgt = timed
-    ? (ex.fixed ? `Today: ${item.sets} × ${t.reps} s${t.kg ? " +" + L.fmtKg(t.kg) + " " + L.unitOf(ex) : ""}`
+    ? (ex.fixed ? `Today: ${item.sets} × ${dur(t.reps)}${ex.per && ex.per !== "hand" ? " (" + ex.per + "s alternate)" : ""}${t.kg ? " +" + L.fmtKg(t.kg) + " " + L.unitOf(ex) : ""}`
       : t.first ? `First time: start at ${t.reps} s` : `Today: ${item.sets} × ${t.reps} s ↑`)
     : t.first
-      ? (ex.type === "bodyweight" ? `First time: ${item.min}–${item.max} reps per set, stop about 1 rep before failure` : `First time: pick a weight that leaves 3–4 reps in reserve`)
+      ? (ex.type === "bodyweight" ? `First time: ${item.min === item.max ? item.min : item.min + "–" + item.max} ${ex.repUnit || "reps"} per set, stop about 1 rep before failure` : `First time: pick a weight that leaves 3–4 reps in reserve`)
       : `Today: ${t.kg ? L.fmtKg(t.kg) + " " + L.unitOf(ex) + hand : "BW"} · ${item.sets} × ${L.rangeText(ex, item)}${t.up ? " ↑" : ""}`;
 
-  const logged = st.sets.map((x, i) => `<div class="logged">[x] Set ${i + 1} · ${timed ? x.reps + " s" + (x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : "") : (x.kg ? L.fmtKg(x.kg) + " " + L.unitOf(ex) : "BW") + " × " + x.reps + (ex.repUnit ? " " + ex.repUnit : "")}</div>`).join("");
+  const logged = st.sets.map((x, i) => `<div class="logged">[x] Set ${i + 1} · ${timed ? dur(x.reps) + (x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : "") : (x.kg ? L.fmtKg(x.kg) + " " + L.unitOf(ex) : "BW") + " × " + x.reps + (ex.repUnit ? " " + ex.repUnit : "")}</div>`).join("");
 
   const stepper = (field, label, val, color) => `
     <div class="stepper"><div class="sr">
@@ -299,7 +299,7 @@ function detail() {
   const kgVal = d.kg == null || d.kg === 0
     ? (ex.type === "weight" ? `<b>0</b><i>${u}${perU}</i>` : timed ? `<i>+</i><b>0</b><i>${u}</i>` : `<b>BW</b>`)
     : `${ex.type === "weight" ? "" : "<i>+</i>"}<b>${L.fmtKg(d.kg)}</b><i>${u}${perU}</i>`;
-  const repVal = timed ? `<b>${d.reps}</b><i>s</i>` : `<i>×</i><b>${d.reps}</b>${ex.repUnit ? `<i>${esc(ex.repUnit)}</i>` : ex.per === "leg" || ex.per === "side" ? `<i>/${ex.per}</i>` : ""}`;
+  const repVal = timed ? (d.reps >= 120 ? `<b>${fmtClock(d.reps)}</b>` : `<b>${d.reps}</b><i>s</i>`) : `<i>×</i><b>${d.reps}</b>${ex.repUnit ? `<i>${esc(ex.repUnit)}</i>` : ex.per === "leg" || ex.per === "side" ? `<i>/${ex.per}</i>` : ""}`;
   const pl = finished ? null : plan(item);
   // Hint line: manual-progression cases keep their advice; superset items name their partner; the rest list alternatives.
   const its = items();
@@ -308,7 +308,7 @@ function detail() {
   // PT target from next.json, shown until the exercise has been logged after the PT's review
   const ptx = ptLine(item, t);
   const hint = ptx ? ptx : timed
-    ? (ex.fixed ? `Hold ${item.min} s. Once it is easy, add weight with the + button.` : `Next time: beat your best by +${ex.step} s`)
+    && !(ex.fixed && ex.noKg) ? (ex.fixed ? `Hold ${item.min} s. Once it is easy, add weight with the + button.` : `Next time: beat your best by +${ex.step} s`)
     : partner ? `Superset with ${db.exercises[partner.ex].name}: alternate sets.`
       : alts.length ? `Alternative: ${alts.join(" or ")} (F6 Swap).` : "";
 
@@ -318,7 +318,7 @@ function detail() {
       <div class="detail">
         ${finished ? `<button class="btn" data-act="undo">Undo last</button>` : `
           <div class="steppers">
-            ${timed && !ex.fixed ? "" : stepper("kg", "weight", kgVal, "var(--blue)")}
+            ${timed && (!ex.fixed || ex.noKg) ? "" : stepper("kg", "weight", kgVal, "var(--blue)")}
             ${stepper("reps", timed ? "seconds" : L.repCap(ex).toLowerCase(), repVal, "var(--green)")}
           </div>
           <div class="logrow">${timed
@@ -413,6 +413,8 @@ function progCode(name) {
   while (Object.values(db.programs).some((p) => p.code === code)) code = base + n++;
   return code;
 }
+// Seconds as "45 s", or "4:00" from 2 minutes up
+const dur = (s) => (s >= 120 ? fmtClock(s) : `${s} s`);
 const catOf = (id) => { const c = (db.exercises[id] && db.exercises[id].cat) || CATS[id]; return CAT_ORDER.includes(c) ? c : "Other"; };
 function progTags(id) {
   const ls = L.LETTERS.filter((l) => db.workouts[l].items.some((i) => i.ex === id));
@@ -557,21 +559,21 @@ function liveView() {
   let main = "";
   if (lv.phase === "setup") main = `
       ${st("prep", "Get ready", `<b>${lv.prep}</b><i>s</i>`)}
-      ${st("goal", "Hold", `<b>${lv.goal}</b><i>s</i>`)}
-      ${ex.fixed ? st("kg", "Added weight", `<i>+</i><b>${L.fmtKg(lv.kg)}</b><i>${L.unitOf(ex)}</i>`) : ""}
+      ${st("goal", ex.live || "Hold", lv.goal >= 120 ? `<b>${fmtClock(lv.goal)}</b>` : `<b>${lv.goal}</b><i>s</i>`)}
+      ${ex.fixed && !ex.noKg ? st("kg", "Added weight", `<i>+</i><b>${L.fmtKg(lv.kg)}</b><i>${L.unitOf(ex)}</i>`) : ""}
       <button class="btn primary lbtn" data-act="livestart">▶ Start</button>`;
   else if (lv.phase === "prep") main = `<div class="lphase prep">Get ready</div><div class="lbig prep" id="livebig"></div>
-      <div class="lsub">then hold ${lv.goal} s${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start now</button>`;
-  else if (lv.phase === "hold") main = `<div class="lphase ${lv.goalHit ? "over" : "hold"}">${lv.goalHit ? "Goal reached · keep going" : "Hold"}</div><div class="lbig ${lv.goalHit ? "over" : "hold"}" id="livebig"></div>
-      <div class="lsub">goal ${lv.goal} s${kgTxt}</div><button class="btn primary lbtn stop" data-act="livestop">■ Stop · log set</button>`;
-  else if (lv.phase === "rest") main = `<div class="lphase rest">Rest · set ${setNo} of ${of} next</div><div class="lbig rest" id="livebig"></div>
-      <div class="lsub">Last set: ${lv.held} s${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start next set now</button><button class="btn lbtn" data-act="liveend">End ${esc(ex.name)} here</button>`;
-  else main = `<div class="lphase over">All ${of} sets done</div><div class="lsub">${sets.map((x) => x.reps + " s").join(" · ")}${kgTxt}</div>
+      <div class="lsub">then ${(ex.live || "hold").toLowerCase()} ${dur(lv.goal)}${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start now</button>`;
+  else if (lv.phase === "hold") main = `<div class="lphase ${lv.goalHit ? "over" : "hold"}">${lv.goalHit ? "Goal reached · keep going" : ex.live || "Hold"}</div><div class="lbig ${lv.goalHit ? "over" : "hold"}" id="livebig"></div>
+      <div class="lsub">goal ${dur(lv.goal)}${kgTxt}</div><button class="btn primary lbtn stop" data-act="livestop">■ Stop · log set</button>`;
+  else if (lv.phase === "rest") main = `<div class="lphase rest">${ex.liveRest || "Rest"} · ${ex.live ? "interval" : "set"} ${setNo} of ${of} next</div><div class="lbig rest" id="livebig"></div>
+      <div class="lsub">Last ${ex.live ? "interval" : "set"}: ${dur(lv.held)}${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start next set now</button><button class="btn lbtn" data-act="liveend">End ${esc(ex.name)} here</button>`;
+  else main = `<div class="lphase over">All ${of} sets done</div><div class="lsub">${sets.map((x) => dur(x.reps)).join(" · ")}${kgTxt}</div>
       <button class="btn primary lbtn" data-act="liveclose">Next exercise</button>`;
   return `<div class="overlay live"><div class="win">
     <div class="title">${esc(ex.name)} · set ${setNo} of ${of}<button class="x" data-act="liveclose" aria-label="Close">×</button></div>
     <div class="detail lbody">${main}
-      ${sets.length ? `<div class="lsets">${sets.map((x, i) => `Set ${i + 1}: ${x.reps} s${x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : ""}`).join("<br>")}</div>` : ""}
+      ${sets.length ? `<div class="lsets">${sets.map((x, i) => `Set ${i + 1}: ${dur(x.reps)}${x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : ""}`).join("<br>")}</div>` : ""}
     </div></div></div>`;
 }
 

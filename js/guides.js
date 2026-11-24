@@ -464,5 +464,142 @@ export const GUIDES = {
    "Lower slowly over about 3 s until the leg is almost straight. Finish all reps on one leg, then switch."
   ],
   "mistakes": "arching the lower back and lifting the hips to swing the weight up; going too heavy and dropping the weight on the way down; grinding out the last reps through a pinch near the top of the hamstring (stop the set there and lower the weight next time)"
+ },
+ "single_leg_balance": {
+  "cue": "Stand on one leg on the balance plate, knee soft, hips level. Stay quiet and still. (Per leg.)",
+  "steps": [
+   "Place the plate near a rail or rack you can touch if needed.",
+   "Step onto the middle with one foot, knee slightly bent, like the glide position.",
+   "Hold for 30 s with your eyes on a fixed point.",
+   "Once that's easy, close your eyes or turn your head slowly side to side."
+  ],
+  "mistakes": "locking the knee; hip dropping on the free-leg side; grabbing the rail at the first wobble (let small wobbles happen)"
+ },
+ "copenhagen_short": {
+  "cue": "Side plank with your top knee on a bench and the bottom leg hanging free. Squeeze your inner thigh to hold your hips up. (Per side.)",
+  "steps": [
+   "Lie on your side next to a bench, forearm on the floor under your shoulder.",
+   "Place the inside of your top knee on the bench.",
+   "Squeeze the top leg down into the bench and lift your hips until your body is straight. The bottom leg hangs free or rests lightly on the floor.",
+   "Hold for 15-20 s, lower, then switch sides."
+  ],
+  "mistakes": "hips sagging; rolling forward; pain on the inside of the knee (move the bench contact higher up the thigh). Stop at any sharp groin pain"
+ },
+ "copenhagen_long": {
+  "cue": "Same as the short lever, but with the top ankle and foot on the bench. Start only once the short lever is easy for 30 s. (Per side.)",
+  "steps": [
+   "Set up as for the short lever, but place the inside of your top ankle on the bench.",
+   "Lift your hips until your body is straight from head to foot.",
+   "Hold for 10-20 s, or lift the bottom leg up to the bench and lower it slowly for reps."
+  ],
+  "mistakes": "jumping to this version too early; hips sagging; ankle slipping off the bench"
+ },
+ "cable_hip_abduction": {
+  "cue": "Stand side-on to a low pulley with the cuff on your far ankle. Lift that leg out sideways, toes pointing forward. (Per side.)",
+  "steps": [
+   "Low pulley with an ankle cuff on the leg furthest from the stack. Hold the frame for balance.",
+   "Stand tall with the working leg slightly in front of the standing leg.",
+   "Lift the working leg out to the side, about 30-40 degrees, leading with the heel.",
+   "Lower slowly. Finish all reps, then switch sides."
+  ],
+  "mistakes": "leaning the torso away; turning the toes up; swinging the leg with momentum"
+ },
+ "side_plank": {
+  "cue": "Elbow under your shoulder, body in one straight line, hips high. Breathe. (Per side.)",
+  "steps": [
+   "Lie on your side, elbow under your shoulder, feet stacked or staggered.",
+   "Lift your hips until your body is straight from head to heels.",
+   "Hold for 30-45 s, then switch sides."
+  ],
+  "mistakes": "hips sagging or piking; shoulder drifting away from the elbow; holding your breath"
+ },
+ "tibialis_raise": {
+  "cue": "Back against a wall, heels about 30 cm out. Lift your toes as high as you can, lower slowly.",
+  "steps": [
+   "Lean your back against a wall with your feet together, heels about 30 cm from the wall.",
+   "Keep your legs straight and lift your toes and the front of your feet towards your shins.",
+   "Pause, then lower slowly without slapping the floor.",
+   "To make it harder, step the heels further from the wall."
+  ],
+  "mistakes": "bending the knees; bouncing; going so fast that the shins cramp"
+ },
+ "skater_bound": {
+  "cue": "Push off sideways from one leg, land soft on the other and hold the skating position for 2 s. (Per side.)",
+  "steps": [
+   "Stand on your right leg in a slight crouch, left foot off the floor.",
+   "Push off sideways to the left and swing your arms across.",
+   "Land on your left leg, knee bent and over your toes, hips back. Hold still for 2 s.",
+   "Push back to the right. One push each way is one rep per side. Start with short jumps."
+  ],
+  "mistakes": "knee caving in on landing; landing stiff-legged; jumping longer than you can control. Stop the set when the landings get sloppy"
+ },
+ "slider_lateral_push": {
+  "cue": "Sit into the standing leg, push the slider foot straight out sideways, then pull it back. Like a skating push. (Per side.)",
+  "steps": [
+   "Stand on a smooth floor with one foot on a slider or a towel.",
+   "Bend your standing knee into the skating crouch, chest slightly forward.",
+   "Push the slider foot out sideways with the inside of the foot until the leg is almost straight.",
+   "Pull it back under you, staying low. Finish all reps, then switch. On a slideboard, glide side to side for 45 s instead."
+  ],
+  "mistakes": "standing up between pushes; pushing backwards instead of sideways; standing knee caving in"
+ },
+ "low_walk": {
+  "cue": "Skating crouch, back flat, hands behind your back. Take slow steps forward without rising.",
+  "steps": [
+   "Sink into the skating position: knees well bent, chest leaning forward, back flat.",
+   "Clasp your hands behind your back.",
+   "Walk forward slowly for 20 m, rolling through the whole foot and keeping your head at the same height.",
+   "Stand up and walk back easy."
+  ],
+  "mistakes": "rising up with each step; rounding the back; rushing the steps"
+ },
+ "db_sl_rdl": {
+  "cue": "Stand on one leg, push your hips back and tip forward with a flat back. Dumbbell in the opposite hand. (Per leg.)",
+  "steps": [
+   "Stand on your right leg, holding a dumbbell in your left hand, knee slightly bent.",
+   "Push your hips back and tip your torso forward while the left leg reaches back.",
+   "Lower until you feel a hamstring stretch, hips level.",
+   "Drive your hips forward to stand tall. Finish all reps, then switch."
+  ],
+  "mistakes": "hips opening up to the side; rounding the back; touching down with the back foot (a light touch is fine early on)"
+ },
+ "cardio_4x4": {
+  "cue": "4 min hard (8 out of 10, a few words at a time), 3 min easy. Even pace across every interval.",
+  "steps": [
+   "After the strength work, warm up for 3-5 min, building to moderate.",
+   "Go hard for 4 min, at a pace you could just about keep for all the intervals.",
+   "Go very easy for 3 min.",
+   "Repeat for the number of intervals that week. Log the distance or calories of each one."
+  ],
+  "mistakes": "starting the first interval too fast; going easy on the last ones; doing intervals on top of an ice day"
+ },
+ "cardio_z2": {
+  "cue": "Easy and steady. You can talk in full sentences and breathe through your nose.",
+  "steps": [
+   "Pick the bike or rower. The bike is easier on the legs before an ice day.",
+   "Settle into an easy pace within the first 5 min.",
+   "Hold it for the planned time. Slow down if you can't keep breathing through your nose."
+  ],
+  "mistakes": "drifting into moderate effort; going harder each session to beat the last; skipping it because it feels too easy"
+ },
+ "backpack_walk": {
+  "cue": "Treadmill at 6-10 % incline with your touring pack. Pack snug, hip belt tight, heaviest items low and close to your back.",
+  "steps": [
+   "Load the touring pack to 5-8 kg, with the heaviest items low and against your back.",
+   "Tighten the hip belt so it carries most of the weight, then the shoulder straps.",
+   "Walk at an easy pace on a 6-10 % incline for 30-40 min without holding the rails.",
+   "Note any back ache and where it is."
+  ],
+  "mistakes": "a pack riding high on the shoulders; a loose hip belt; holding the handrails"
+ },
+ "bfr_leg_extension": {
+  "cue": "BFR cuffs at the top of both thighs, very light weight, 30-15-15-15 reps with 30 s rest. Optional, from week 6.",
+  "steps": [
+   "Fit proper BFR cuffs or bands high on the thighs, snug but not painful (about 7 of 10 tightness on elastic bands).",
+   "Set the leg extension at about 20-30 % of what you could lift for one rep.",
+   "Do 30 reps, rest 30 s, then 15, 15 and 15 reps.",
+   "Remove the cuffs straight after the last set."
+  ],
+  "mistakes": "cuffs too tight (numbness, tingling or colour change means stop and loosen); using heavy weights; DIY tourniquets. Skip it, and ask a doctor first, if you have a history of blood clots, high blood pressure or circulation problems"
  }
 };
