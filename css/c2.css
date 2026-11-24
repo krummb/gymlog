@@ -270,3 +270,9 @@ footer .drives .drive { height:44px; position:relative; display:flex; align-item
 .drive .dl { position:absolute; top:2px; left:4px; width:auto; font:normal 9.5px "Courier New", monospace; color:var(--teal); }
 .drive .dn { align-items:center; text-align:center; font-size:13px; line-height:1.15; max-width:100%; padding-top:3px; }
 .drive .dn small { font-size:10px; max-width:100%; }
+/* short version (0.16.0) */
+.seg.wmode { margin-top:6px; }
+.seg.wmode .btn { flex:1; }
+.shorttag { color:var(--amber); }
+.shortlist { padding:4px 6px 8px; color:var(--grey); }
+.shortlist b { color:var(--teal); }

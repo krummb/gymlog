@@ -140,10 +140,15 @@ export function itemState(session, item) {
 
 // The exercises of one session: the workout's items, with today-only swaps (session.swaps: original id -> new id)
 // and today-only additions (session.extra) applied. The program itself is never changed by these.
+// Short version (w.short, from the PT): used when the session is marked short
+export const baseItems = (w, session) => (session && session.short && w.short && w.short.length ? w.short : w.items);
 export function sessionItems(w, session) {
-  if (!session || (!session.swaps && !session.extra)) return w.items;
+  if (!session || (!session.swaps && !session.extra && !session.short)) return w.items;
   const sw = session.swaps || {};
-  return [...w.items.map((it) => (sw[it.ex] ? { ...it, ex: sw[it.ex], today: true } : it)), ...(session.extra || [])];
+  const list = [...baseItems(w, session).map((it) => (sw[it.ex] ? { ...it, ex: sw[it.ex], today: true } : it)), ...(session.extra || [])];
+  // exercises already logged that the short version leaves out stay in the list
+  for (const it of w.items) { const ex = sw[it.ex] || it.ex; if (session.entries[ex] && !list.some((x) => x.ex === ex)) list.push({ ...it, ex }); }
+  return list;
 }
 
 // Close the session: copy each exercise's result to exercise.last

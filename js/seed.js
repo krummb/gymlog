@@ -83,6 +83,7 @@ export const extraExercises = {
   low_walk:             { name: "Low Walk", type: "bodyweight", step: 2.5, repUnit: "m", repStep: 5, rest: 75 },
   db_sl_rdl:            { name: "DB Single-Leg RDL", type: "weight", scale: DB_SCALE, step: 1, per: "leg", rest: 75, start: 8 },
   cardio_4x4:           { name: "Cardio Intervals (SkiErg/Rower)", type: "timed", fixed: true, noKg: true, step: 30, rest: 120, live: "Hard", liveRest: "Easy" },
+  db_lateral_lunge:     { name: "DB Lateral Lunge", type: "weight", scale: DB_SCALE, step: 1, per: "side", handKg: true, rest: 75, start: 6 },
   straight_arm_pulldown: { name: "Cable Straight-Arm Pulldown", type: "weight", step: 2.5, rest: 75, start: 10 },
   cardio_z2:            { name: "Steady Cardio Z2 (Bike/Rower)", type: "timed", fixed: true, noKg: true, step: 60, rest: 60, live: "Easy" },
   backpack_walk:        { name: "Backpack Incline Walk", type: "timed", fixed: true, noKg: true, step: 60, rest: 60, live: "Walk" },

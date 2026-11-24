@@ -40,7 +40,7 @@ function session() {
 }
 const prog = () => db.programs[db.activeProgram];
 function workout() { return db.workouts[ui.letter]; }
-const items = () => L.sessionItems(workout(), session()); // today's exercises (program + today-only swaps/additions)
+const items = () => L.sessionItems(workout(), session() || (ui.short && workout().short && workout().short.length ? { short: true, entries: {} } : null)); // today's exercises (program + today-only swaps/additions)
 
 function pickLetter() {
   const open = L.openSession(db);
@@ -77,6 +77,7 @@ function ensureSession() {
     if (any) L.finishSession(db, other); else delete db.sessions[other.id];
   }
   s = L.newSession(db, ui.letter);
+  if (ui.short && hasShort()) s.short = true;
   return s;
 }
 
@@ -168,6 +169,7 @@ function today() {
   });
 
   const allClosed = doneCount === its.length;
+  const modeRow = s && !allClosed ? modeSwitch() : "";
   const fin = allClosed || s ? `<button class="btn finish ${allClosed ? "primary" : ""}" data-act="finish">${allClosed ? "Finish workout " + ui.letter : "Finish workout early"}</button>` : "";
   const dt = ui.active === WARM ? warmDetail() : ui.active ? detail() : { top: "", info: "" };
   // Phone sits in a pouch, only the top ~4/7 of the screen is reachable: controls first, reading next, the list last.
@@ -175,13 +177,13 @@ function today() {
     ${dt.top}
     ${allClosed ? fin : ""}
     ${dt.info}
-    <div class="pathbar">▾ <span>gym:\\${esc(w.name.replace(/\s+/g, ""))}\\*.*</span><span class="right">${L.sessionCountFor(db, ui.letter)} ${L.sessionCountFor(db, ui.letter) === 1 ? "session" : "sessions"} logged</span></div>
+    <div class="pathbar">▾ <span>gym:\\${esc(w.name.replace(/\s+/g, ""))}\\*.*</span><span class="right">${isShort() ? '<b class="shorttag">short</b> · ' : ""}${L.sessionCountFor(db, ui.letter)} ${L.sessionCountFor(db, ui.letter) === 1 ? "session" : "sessions"} logged</span></div>
     <div class="panel">
       <div class="thead"><span></span><span>Name</span><span>Today</span><span>Sets</span></div>
       ${rows.join("")}
       <div class="status">${doneCount} / ${its.length} exercises done${s ? "" : " · not started"}</div>
     </div>
-    ${allClosed ? "" : fin}`;
+    ${allClosed ? "" : fin}${modeRow}`;
 }
 
 function exhead(title, sub) {
@@ -247,6 +249,15 @@ function fkeys() {
 const WARM = "__warm";
 const fmtClock = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
+const hasShort = () => !!(workout().short && workout().short.length);
+const isShort = () => { const s = session(); return hasShort() && (s ? !!s.short : !!ui.short); };
+// Full / Short switch (only when the PT has written a short version of this workout)
+function modeSwitch() {
+  if (!hasShort()) return "";
+  const sh = isShort();
+  return `<div class="seg wmode"><button class="btn ${sh ? "" : "primary"}" data-act="wmode" data-v="full">Full · ${workout().items.length} exercises</button><button class="btn ${sh ? "primary" : ""}" data-act="wmode" data-v="short">Short · ${workout().short.length}</button></div>`;
+}
+
 function warmDetail() {
   const s = session();
   const running = !!s?.warmStart;
@@ -261,6 +272,7 @@ function warmDetail() {
         ${done ? `<button class="btn" data-act="warmundo">Undo warm-up</button>`
           : running ? `<button class="btn primary log" data-act="warmstop">Stop · warm-up done</button>`
           : `<button class="btn primary log" data-act="warmstart">Start warm-up</button><button class="btn" data-act="warmdone">Mark done (no timer)</button>`}
+        ${modeSwitch()}
         ${elapsed >= 300 && running ? `<div class="hint">5 min reached. Stop whenever you feel warm.</div>` : ""}
       </div>
     </div>`;
@@ -379,6 +391,9 @@ function programs() {
           <span><button class="btn stepbtn xbtn" data-act="premove" data-l="${l}" data-i="${i}" aria-label="Remove ${esc(ex.name)} from workout ${l}">×</button></span></div>`;
       }).join("")}
       <div class="status"><button class="btn" data-act="allsets" data-l="${l}">All to 3 sets</button> <button class="btn" data-act="padd" data-l="${l}">+ Add exercise</button></div>
+      <div class="shortlist small">${w.short && w.short.length
+        ? `<b>Short version</b> (from the PT): ${w.short.map((it) => `${esc(db.exercises[it.ex] ? db.exercises[it.ex].name : it.ex)} ${it.sets}×${db.exercises[it.ex] && db.exercises[it.ex].type === "timed" ? dur(it.min) : it.min === it.max ? it.min : it.min + "–" + it.max}`).join(" · ")}`
+        : "No short version yet."}</div>
     </div>`;
   }).join("") + `<p class="small">Tap “rest” under a name to set the rest time for that exercise (it applies wherever the exercise is used; default is set in Settings). Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises: “60s” is a fixed hold time (plank); “20s+” is a starting time, then the target is your last best + the step. SS = superset with the next row.</p>`;
 }
@@ -610,7 +625,12 @@ function tick() {
 // ---------- actions ----------
 const act = {
   screen: (v) => { ui.screen = v; },
-  letter: (v) => { ui.letter = v; setActive(null); },
+  letter: (v) => { ui.letter = v; ui.short = false; setActive(null); },
+  wmode: (v) => {
+    const s = session(), on = v === "short";
+    if (s) { if (on) s.short = true; else delete s.short; persist(); } else ui.short = on;
+    if (ui.active && ui.active !== WARM && !items().some((i) => i.ex === ui.active)) setActive(null);
+  },
   pick: (v) => { setActive(v); },
   nav: (v) => {
     const order = [WARM, ...items().map((i) => i.ex)];
@@ -667,7 +687,7 @@ const act = {
     const xi = (s.extra || []).findIndex((i) => i.ex === cur);
     if (xi >= 0) s.extra[xi] = { ...s.extra[xi], ex: v };
     else {
-      const base = w.items.find((it) => ((s.swaps || {})[it.ex] || it.ex) === cur);
+      const base = L.baseItems(w, s).find((it) => ((s.swaps || {})[it.ex] || it.ex) === cur);
       if (base) { s.swaps = s.swaps || {}; if (v === base.ex) delete s.swaps[base.ex]; else s.swaps[base.ex] = v; if (!Object.keys(s.swaps).length) delete s.swaps; }
     }
     if (s.entries[cur] && !s.entries[cur].sets.length) delete s.entries[cur];

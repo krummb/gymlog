@@ -613,5 +613,15 @@ export const GUIDES = {
    "Let the bar rise slowly until you feel a stretch under your armpits."
   ],
   "mistakes": "bending the elbows into a pushdown; shrugging; rocking the whole body to move the weight"
+ },
+ "db_lateral_lunge": {
+  "cue": "Big step out to the side, sit back into that hip, other leg straight. Push back to the middle. Alternative to Slider Lateral Push. (Per side.)",
+  "steps": [
+   "Stand tall, feet together, a dumbbell in each hand at your sides (or one held at your chest).",
+   "Step one foot wide out to the side, toes pointing forward or slightly out.",
+   "Push your hips back and bend that knee until the thigh is near parallel, the other leg straight. Keep your chest up.",
+   "Push off the bent leg back to the start. Finish all reps, then switch sides."
+  ],
+  "mistakes": "knee caving in or shooting past the toes; rounding the back; stepping too short to sit back into the hip"
  }
 };
