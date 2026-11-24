@@ -70,7 +70,12 @@ function applyProgram(db) {
 }
 
 // Bring older saved data up to date: add exercises/scales that the seed has and the saved data lacks
+// Programs (0.14.0): db.programs = { <id>: { name, code, workouts: {A..D}, deleted? } }, db.activeProgram.
+// db.workouts always points at the active program's workouts (same object), so the rest of the app needs no change.
+const linkActive = (db) => { if (db.programs && db.programs[db.activeProgram]) db.workouts = db.programs[db.activeProgram].workouts; };
+
 function migrate(db) {
+  linkActive(db);
   mergeExercises(db);
   applyProgram(db);
   for (const [id, e] of Object.entries({ ...seedExercises, ...extraExercises })) {
@@ -122,6 +127,15 @@ function migrate(db) {
     if (hc && /^(Cable )?Hammer Curl$/i.test(hc.name)) hc.name = "DB Hammer Curl";
     db.progRev = PROG_REV;
   }
+  if (!db.programs) {
+    db.programs = { fw4: { name: "4-Day Free Weight", code: "FW4", workouts: db.workouts } };
+    const old = db.archive && db.archive.program1;
+    if (old && old.workouts) db.programs.mx4 = { name: "Machines (old)", code: "MX4", workouts: clone(old.workouts) };
+    db.activeProgram = "fw4";
+    for (const s of Object.values(db.sessions)) if (!s.program) s.program = old && old.savedAt && s.startedAt < old.savedAt ? "mx4" : "fw4";
+  }
+  if (!db.programs[db.activeProgram]) db.activeProgram = Object.keys(db.programs)[0];
+  linkActive(db);
   return db;
 }
 

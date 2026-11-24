@@ -39,9 +39,10 @@ export function buildLog(db) {
   L.push(``, `## Sessions (newest first)`, ``);
   const sessions = Object.values(db.sessions).sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || ""));
   for (const s of sessions) {
-    const w = db.workouts[s.workout];
+    const p = db.programs && db.programs[s.program];
+    const w = (p ? p.workouts : db.workouts)[s.workout];
     const mins = s.finishedAt ? Math.round((new Date(s.finishedAt) - new Date(s.startedAt)) / 60000) : null;
-    L.push(`### ${fmtDate(s.startedAt)} · Workout ${s.workout}${w ? " · " + w.name : ""}${mins != null ? ` · ${mins} min` : " · in progress / unfinished"}`);
+    L.push(`### ${fmtDate(s.startedAt)} · ${p ? p.code + " · " : ""}Workout ${s.workout}${w ? " · " + w.name : ""}${mins != null ? ` · ${mins} min` : " · in progress / unfinished"}`);
     if (s.warmup) L.push(`- Warm-up: ${s.warmup === true ? "done" : s.warmup}${s.warmSec ? ` (${Math.round(s.warmSec / 60)} min)` : ""}`);
     const order = w ? w.items.map((i) => i.ex).filter((id) => s.entries[id]) : [];
     for (const id of Object.keys(s.entries)) if (!order.includes(id)) order.push(id);

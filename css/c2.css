@@ -255,3 +255,13 @@ footer .drives .drive { height:40px; justify-content:flex-start; gap:6px; paddin
 /* F-keys: key label small in the top-left corner, action name as the main text */
 .fkeys .btn { position:relative; display:flex; align-items:center; justify-content:center; font-size:13px; }
 .fkeys .btn .fk { position:absolute; top:2px; left:4px; font:normal 9.5px "Courier New", monospace; color:var(--teal); }
+
+/* programs list (0.14.0) */
+.progrow { display:flex; align-items:center; gap:8px; min-height:44px; padding:4px 6px; border:1px solid var(--line); margin-bottom:3px; }
+.progrow.on { border:2px solid var(--teal); }
+.progrow .pcode { font:bold 15px "Courier New", monospace; color:var(--teal); width:40px; flex:none; }
+.progrow .pname { flex:1; display:flex; flex-direction:column; font-weight:bold; min-width:0; }
+.progrow .pname small { font-weight:normal; color:var(--grey); }
+.progrow .pbtns { display:flex; gap:4px; flex:none; }
+.progrow .pbtns .btn { min-height:34px; }
+button.pathbar.wname { width:100%; text-align:left; border:0; font:inherit; cursor:pointer; }

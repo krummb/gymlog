@@ -36,8 +36,9 @@ const I = {
 // ---------- state helpers ----------
 function session() {
   const s = L.openSession(db);
-  return s && s.workout === ui.letter ? s : null;
+  return s && s.workout === ui.letter && (s.program || db.activeProgram) === db.activeProgram ? s : null;
 }
+const prog = () => db.programs[db.activeProgram];
 function workout() { return db.workouts[ui.letter]; }
 const items = () => L.sessionItems(workout(), session()); // today's exercises (program + today-only swaps/additions)
 
@@ -111,7 +112,7 @@ function render() {
 function titleText() {
   if (ui.screen !== "today") return "GymLog\\" + { programs: "Programs", exercises: "Exercises", settings: "Settings" }[ui.screen];
   const [a, ...b] = workout().name.split(/\s+-\s+/);
-  return `GymLog\\wo-${ui.letter}\\${a.trim().replace(/\s+/g, "-")}${b.length ? "_" + b.join("_").trim().replace(/\s+/g, "-") : ""}`;
+  return `GymLog\\${prog().code}\\wo-${ui.letter}\\${a.trim().replace(/\s+/g, "-")}${b.length ? "_" + b.join("_").trim().replace(/\s+/g, "-") : ""}`;
 }
 const shortName = (l) => db.workouts[l].name.split(/\s+-\s+/)[0] || l;
 
@@ -349,11 +350,24 @@ function parseRest(v) {
 }
 const fmtRest = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
+function programList() {
+  const list = Object.entries(db.programs).filter(([, p]) => !p.deleted);
+  return `<div class="panel"><div class="pathbar">▾ gym:\\programs\\*.*</div><div class="detail">
+    ${list.map(([id, p]) => {
+      const on = id === db.activeProgram;
+      const n = Object.values(db.sessions).filter((s) => s.finishedAt && s.program === id).length;
+      return `<div class="progrow ${on ? "on" : ""}"><span class="pcode">${esc(p.code)}</span><span class="pname">${esc(p.name)}<small>${n} session${n === 1 ? "" : "s"}${on ? " · active" : ""}</small></span>
+        <span class="pbtns">${on ? "" : `<button class="btn" data-act="progswitch" data-v="${id}">Switch to</button>`}<button class="btn" data-act="progmenu" data-v="${id}" aria-label="More for ${esc(p.name)}">…</button></span></div>`;
+    }).join("")}
+    <p class="small">Exercises, weights and history are shared by all programs. Each program keeps its own place in the A–D rotation. Below: the workouts of the active program.</p>
+  </div></div>`;
+}
+
 function programs() {
-  return L.LETTERS.map((l) => {
+  return programList() + L.LETTERS.map((l) => {
     const w = db.workouts[l];
     return `<div class="panel">
-      <div class="pathbar">▾ gym:\\${l} · ${esc(w.name)}</div>
+      <button class="pathbar wname" data-act="wrename" data-l="${l}" aria-label="Rename workout ${l}">▾ gym:\\${l} · ${esc(w.name)} <span class="small">✎</span></button>
       <div class="thead prog"><span>Exercise</span><span>Sets</span><span>Reps</span><span>Step</span><span></span></div>
       ${w.items.map((it, i) => {
         const ex = db.exercises[it.ex];
@@ -391,6 +405,13 @@ function ptLine(item, t) {
   const adv = ptAdvice(n.note), same = ptSame(n.target || "", item, t);
   if (same && !adv) return "";
   return "PT: " + [same ? "" : n.target, adv].filter(Boolean).join(" · ");
+}
+// Made-up short code from a program name: initials + 4 (four-day split), unique
+function progCode(name) {
+  const base = (name.match(/[A-Za-z0-9]+/g) || ["P"]).map((w) => w[0]).join("").toUpperCase().slice(0, 3) || "P";
+  let code = base + "4", n = 2;
+  while (Object.values(db.programs).some((p) => p.code === code)) code = base + n++;
+  return code;
 }
 const catOf = (id) => { const c = (db.exercises[id] && db.exercises[id].cat) || CATS[id]; return CAT_ORDER.includes(c) ? c : "Other"; };
 function progTags(id) {
@@ -438,10 +459,10 @@ function exercisesScreen() {
 }
 
 function recentHtml() {
-  const last = L.finishedSessions(db).slice(-3).reverse();
+  const last = L.finishedSessions(db, true).slice(-3).reverse();
   if (!last.length) return `<p class="small">None yet.</p>`;
   const f = (iso) => new Date(iso).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).replace(",", "");
-  return `<div class="recent">${last.map((s) => `<div><span class="rd">${esc(f(s.startedAt))}</span> · <b>${s.workout}</b> · ${esc(db.workouts[s.workout] ? db.workouts[s.workout].name : "")}</div>`).join("")}</div>`;
+  return `<div class="recent">${last.map((s) => `<div><span class="rd">${esc(f(s.startedAt))}</span> · <b>${(L.programOf(db, s) || {}).code || ""} ${s.workout}</b> · ${esc(L.programOf(db, s) && L.programOf(db, s).workouts[s.workout] ? L.programOf(db, s).workouts[s.workout].name : "")}</div>`).join("")}</div>`;
 }
 
 function syncPanel() {
@@ -801,6 +822,45 @@ const act = {
   },
   premovenow: (_, el) => { db.workouts[el.dataset.l].items.splice(+el.dataset.i, 1); persist(); ui.dialog = null; },
   beeps: (v) => { db.settings.beeps = v === "on"; persist(); },
+  progswitch: (v) => {
+    const open = L.openSession(db);
+    if (open && Object.values(open.entries).some((e) => e.sets.length)) { alert(`Workout ${open.workout} is still open. Finish it first, then switch.`); return "norender"; }
+    if (open) delete db.sessions[open.id];
+    db.activeProgram = v; db.workouts = db.programs[v].workouts;
+    persist(); ui.letter = L.nextLetter(db); setActive(null); ui.restEnd = null;
+  },
+  progmenu: (v) => {
+    const p = db.programs[v], on = v === db.activeProgram;
+    ui.dialog = { title: `${p.code} · ${p.name}`, ok: false, body: `
+      <button class="btn wide" data-act="progrename" data-v="${v}">Rename…</button>
+      <button class="btn wide" data-act="progcopy" data-v="${v}">Copy as a new program…</button>
+      ${on ? `<p class="small">The active program can't be deleted. Switch to another one first.</p>` : `<button class="btn wide" data-act="progdel" data-v="${v}">Delete program</button>`}
+      <button class="btn wide" data-act="close">Cancel</button>` };
+  },
+  progrename: (v) => {
+    const p = db.programs[v];
+    const name = prompt("Program name", p.name); if (name == null || !name.trim()) return "norender";
+    const code = prompt("Short code (2–4 letters, shown in the title)", p.code); 
+    p.name = name.trim(); if (code && code.trim()) p.code = code.trim().toUpperCase().slice(0, 4);
+    persist(); ui.dialog = null;
+  },
+  progcopy: (v) => {
+    const src = db.programs[v];
+    const name = prompt("Name of the new program", "Copy of " + src.name); if (name == null || !name.trim()) return "norender";
+    const id = "p" + Date.now().toString(36);
+    db.programs[id] = { name: name.trim(), code: progCode(name), workouts: JSON.parse(JSON.stringify(src.workouts)) };
+    persist(); ui.dialog = null; act.progswitch(id);
+  },
+  progdel: (v) => {
+    const p = db.programs[v];
+    if (!confirm(`Delete ${p.name}? Its workout history stays in the log.`)) return "norender";
+    p.deleted = true; persist(); ui.dialog = null;
+  },
+  wrename: (_, el) => {
+    const w = db.workouts[el.dataset.l];
+    const n = prompt(`Name of workout ${el.dataset.l} (e.g. "Up A - Push": the part before " - " is shown on the button)`, w.name);
+    if (n != null && n.trim()) { w.name = n.trim(); persist(); }
+  },
   cat: (v) => { if (ui.openCats.has(v)) ui.openCats.delete(v); else ui.openCats.add(v); },
   liveopen: () => {
     const item = items().find((i) => i.ex === ui.active); if (!item) return;

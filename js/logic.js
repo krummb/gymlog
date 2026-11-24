@@ -37,8 +37,9 @@ export function openSession(db) {
   return Object.values(db.sessions).find((s) => !s.finishedAt) || null;
 }
 
-export function finishedSessions(db) {
-  return Object.values(db.sessions).filter((s) => s.finishedAt).sort((a, b) => a.finishedAt.localeCompare(b.finishedAt));
+// Finished sessions of the active program (all programs with all = true)
+export function finishedSessions(db, all = false) {
+  return Object.values(db.sessions).filter((s) => s.finishedAt && (all || !db.activeProgram || (s.program || db.activeProgram) === db.activeProgram)).sort((a, b) => a.finishedAt.localeCompare(b.finishedAt));
 }
 
 // Next workout in A→B→C→D rotation after the last finished one
@@ -56,6 +57,7 @@ export function cycleDone(db) {
   return out;
 }
 
+export const programOf = (db, s) => (db.programs && db.programs[s.program || db.activeProgram]) || null;
 export function sessionCount(db) { return finishedSessions(db).length; }
 export function sessionCountFor(db, letter) { return finishedSessions(db).filter((x) => x.workout === letter).length; }
 
@@ -118,7 +120,7 @@ export function lastText(ex) {
 
 export function newSession(db, letter) {
   const id = new Date().toISOString();
-  const s = { id, workout: letter, startedAt: id, finishedAt: null, warmup: false, warmStart: null, warmAt: null, warmSec: 0, entries: {} };
+  const s = { id, program: db.activeProgram, workout: letter, startedAt: id, finishedAt: null, warmup: false, warmStart: null, warmAt: null, warmSec: 0, entries: {} };
   db.sessions[id] = s;
   return s;
 }
@@ -147,7 +149,8 @@ export function sessionItems(w, session) {
 // Close the session: copy each exercise's result to exercise.last
 export function finishSession(db, session) {
   session.finishedAt = new Date().toISOString();
-  const w = db.workouts[session.workout];
+  const p = db.programs && db.programs[session.program];
+  const w = (p ? p.workouts : db.workouts)[session.workout];
   for (const item of sessionItems(w, session)) {
     const e = session.entries[item.ex];
     if (!e || !e.sets.length) continue;
