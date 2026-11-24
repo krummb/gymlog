@@ -564,19 +564,21 @@ export const GUIDES = {
   "mistakes": "hips opening up to the side; rounding the back; touching down with the back foot (a light touch is fine early on)"
  },
  "cardio_4x4": {
-  "cue": "4 min hard (8 out of 10, a few words at a time), 3 min easy. Even pace across every interval.",
+  "cue": "Hard reps at your ladder level, easy parts really easy. The first rep should feel too easy; keep the same pace on every rep.",
   "steps": [
-   "After the strength work, warm up for 3-5 min, building to moderate.",
-   "Go hard for 4 min, at a pace you could just about keep for all the intervals.",
-   "Go very easy for 3 min.",
-   "Repeat for the number of intervals that week. Log the distance or calories of each one."
+   "Do this right after the 5 min warm-up, before the lifts. Row the last minute of the warm-up a bit firmer.",
+   "Row the hard part of your level (level 1: 1 min) at 6-7 out of 10, about the same stroke rate and split on every rep.",
+   "Paddle very lightly through the easy part until your breathing settles.",
+   "Repeat for your level's reps. Note the distance of each hard rep.",
+   "Every rep at an even pace and the last no harder than the target: next time, move up a level (see the Cardio ladder in the program).",
+   "On the SkiErg, the same ladder applies: hinge at the hips and drive the handles down with your trunk, not just your arms."
   ],
-  "mistakes": "starting the first interval too fast; going easy on the last ones; doing intervals on top of an ice day"
+  "mistakes": "sprinting the first rep; pulling with the arms instead of driving with the legs; doing it the day after a leg session or ice day; picking the assault bike before level 3"
  },
  "cardio_z2": {
   "cue": "Easy and steady. You can talk in full sentences and breathe through your nose.",
   "steps": [
-   "Pick the bike or rower. The bike is easier on the legs before an ice day.",
+   "Pick the rower, SkiErg or an upright bike (not the assault bike). The bike is easier on the legs before an ice day.",
    "Settle into an easy pace within the first 5 min.",
    "Hold it for the planned time. Slow down if you can't keep breathing through your nose."
   ],
@@ -601,5 +603,15 @@ export const GUIDES = {
    "Remove the cuffs straight after the last set."
   ],
   "mistakes": "cuffs too tight (numbness, tingling or colour change means stop and loosen); using heavy weights; DIY tourniquets. Skip it, and ask a doctor first, if you have a history of blood clots, high blood pressure or circulation problems"
+ },
+ "straight_arm_pulldown": {
+  "cue": "Face a high pulley, arms almost straight. Pull the bar down to your thighs with your lats, like a double-pole push.",
+  "steps": [
+   "High pulley with a straight bar or rope. Stand an arm's length away, slight hip hinge, arms reaching up and forward.",
+   "Keep a soft bend in the elbows and pull the bar down in an arc to your thighs.",
+   "Squeeze your lats and brace your trunk at the bottom.",
+   "Let the bar rise slowly until you feel a stretch under your armpits."
+  ],
+  "mistakes": "bending the elbows into a pushdown; shrugging; rocking the whole body to move the weight"
  }
 };
