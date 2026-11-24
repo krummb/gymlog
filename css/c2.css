@@ -265,3 +265,8 @@ footer .drives .drive { height:40px; justify-content:flex-start; gap:6px; paddin
 .progrow .pbtns { display:flex; gap:4px; flex:none; }
 .progrow .pbtns .btn { min-height:34px; }
 button.pathbar.wname { width:100%; text-align:left; border:0; font:inherit; cursor:pointer; }
+/* workout buttons in F-key style (0.15.3): letter small in the corner, name + subtitle centred */
+footer .drives .drive { height:44px; position:relative; display:flex; align-items:center; justify-content:center; padding:0 3px; gap:0; }
+.drive .dl { position:absolute; top:2px; left:4px; width:auto; font:normal 9.5px "Courier New", monospace; color:var(--teal); }
+.drive .dn { align-items:center; text-align:center; font-size:13px; line-height:1.15; max-width:100%; padding-top:3px; }
+.drive .dn small { font-size:10px; max-width:100%; }
