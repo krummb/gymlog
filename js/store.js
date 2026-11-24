@@ -144,7 +144,11 @@ export function load() {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) { const db = migrate(JSON.parse(raw)); save(db); return db; }
-  } catch (e) { console.warn("load failed", e); }
+  } catch (e) {
+    console.warn("load failed", e);
+    // Never lose data to a bug: keep the unreadable copy before starting fresh
+    try { const raw = localStorage.getItem(KEY); if (raw) localStorage.setItem(KEY + ".broken-" + Date.now(), raw); } catch (_) {}
+  }
   const db = fresh();
   migrate(db);
   save(db);
@@ -159,6 +163,26 @@ export function save(db) {
 export function exportJson(db) {
   return JSON.stringify(db, null, 2);
 }
+
+// Merge two copies of the data (e.g. the repo's and this phone's): every session from both, and for each exercise
+// the newer real result. Names, notes, settings, rest, scales and programs come from `base` (the fuller history);
+// anything only `extra` has is added. Returns migrated data.
+export function mergeData(base, extra) {
+  const m = migrate(clone(base)), x = migrate(clone(extra));
+  for (const [id, s] of Object.entries(x.sessions)) if (!m.sessions[id]) m.sessions[id] = s;
+  for (const [id, e] of Object.entries(x.exercises)) {
+    const b = m.exercises[id];
+    if (!b) { m.exercises[id] = e; continue; }
+    const real = (l) => l && !l.baseline && l.date;
+    if (real(e.last) && (!real(b.last) || e.last.date > b.last.date)) b.last = e.last;
+  }
+  for (const [id, p] of Object.entries(x.programs || {})) if (!m.programs[id]) m.programs[id] = p;
+  if (x.activeProgram && m.programs[x.activeProgram]) m.activeProgram = x.activeProgram;
+  return migrate(m);
+}
+
+// Finished sessions in `remote` that `local` doesn't have (sync refuses to overwrite those)
+export const missingSessions = (local, remote) => Object.values(remote.sessions || {}).filter((s) => s.finishedAt && !(local.sessions || {})[s.id]);
 
 export function importJson(text) {
   const db = JSON.parse(text);

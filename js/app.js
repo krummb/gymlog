@@ -1,4 +1,4 @@
-import { load, save, exportJson, importJson } from "./store.js";
+import { load, save, exportJson, importJson, mergeData, missingSessions } from "./store.js";
 import * as L from "./logic.js";
 import { GUIDES } from "./guides.js";
 import * as Sync from "./sync.js";
@@ -476,6 +476,7 @@ function syncPanel() {
     <div class="noterow"><label for="synctoken">Token</label><input id="synctoken" type="password" value="" placeholder="${on ? "saved (paste to replace)" : "github_pat_…"}" autocomplete="off"></div>
     <p class="small">${status}</p>
     <p class="small">PT targets: ${(() => { const n = Sync.nextTargets(); return n ? `${Object.keys(n.targets || {}).length} exercises, updated ${esc(String(n.updated || "").replace("T", " "))}` : "none loaded yet"; })()}</p>
+    ${c.conflict ? `<button class="btn primary" data-act="syncrestore">Restore from GitHub</button><p class="small">Adds the repo's workouts to this phone (nothing here is lost), then syncs.</p>` : ""}
     <button class="btn" data-act="syncnow">Sync now</button>${on ? '<button class="btn" data-act="syncoff">Remove token</button>' : ""}`;
 }
 
@@ -920,6 +921,16 @@ const act = {
     else if (v != null) alert("Use the form 8-10 (or a single number).");
   },
   syncnow: () => { if (!Sync.configured()) { alert("Paste the token first."); return; } Sync.flush(db, true); Sync.fetchNext().then(() => render()); },
+  syncrestore: async () => {
+    try {
+      const remote = await Sync.fetchRemote(); if (!remote) { alert("The repo has no data yet."); return "norender"; }
+      const n = missingSessions(db, remote).length;
+      if (!confirm(`Add ${n} workout${n === 1 ? "" : "s"} from GitHub to this phone? Everything already on this phone is kept.`)) return "norender";
+      db = mergeData(remote, db); save(db); Sync.setConfig({ conflict: 0, err: null, hash: {} });
+      pickLetter(); render(); Sync.flush(db, true);
+    } catch (e) { alert("Restore failed: " + (e.message || e)); }
+    return "norender";
+  },
   syncoff: () => { if (confirm("Remove the token from this phone? Nothing in the repo is deleted.")) Sync.setConfig({ token: "", pending: false, err: null }); },
   close: () => { ui.dialog = null; },
   noop: () => "norender",

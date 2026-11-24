@@ -1,6 +1,7 @@
 // Optional one-way backup to a private GitHub repo, so the data can be read without exporting from the phone.
 // Writes two files: gymlog.json (everything) and log.md (readable: current weights + finished sessions, newest first).
 // Settings (repo, token) live in their own localStorage key, never inside the exported data.
+import { missingSessions } from "./store.js";
 const KEY = "gymlog.sync.v1";
 let busy = false, onChange = () => {};
 
@@ -57,6 +58,16 @@ export function buildLog(db) {
   return L.join("\n");
 }
 
+// The repo's gymlog.json (null if there is none yet)
+export async function fetchRemote() {
+  const c = config();
+  const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/gymlog.json?ref=${encodeURIComponent(c.branch)}`,
+    { headers: { Authorization: `Bearer ${c.token}`, Accept: "application/vnd.github.raw+json", "X-GitHub-Api-Version": "2022-11-28" }, cache: "no-store" });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "Token refused (check it and its repo access)" : `GitHub said ${r.status}`);
+  return JSON.parse(await r.text());
+}
+
 async function put(c, path, text, message) {
   const url = `https://api.github.com/repos/${c.repo}/contents/${path}`;
   const h = { Authorization: `Bearer ${c.token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
@@ -75,6 +86,10 @@ export async function flush(db, force = false) {
   if (!navigator.onLine) { setConfig({ pending: true }); return; }
   busy = true; onChange();
   try {
+    // Never overwrite workouts this phone doesn't have (e.g. a fresh copy of the app): stop and offer Restore instead
+    const remote = await fetchRemote();
+    const miss = remote ? missingSessions(db, remote) : [];
+    if (miss.length) { busy = false; setConfig({ pending: true, conflict: miss.length, err: `The repo has ${miss.length} workout${miss.length === 1 ? "" : "s"} this phone doesn't have. Nothing was sent. Tap “Restore from GitHub”.` }); return; }
     const files = { "gymlog.json": JSON.stringify(db, null, 2), "log.md": buildLog(db) };
     const hash = { ...c.hash };
     for (const [path, text] of Object.entries(files)) {
@@ -83,7 +98,7 @@ export async function flush(db, force = false) {
       await put(c, path, text, `GymLog ${new Date().toISOString().slice(0, 16).replace("T", " ")}`);
       hash[path] = hh;
     }
-    busy = false; setConfig({ pending: false, last: new Date().toISOString(), err: null, hash });
+    busy = false; setConfig({ pending: false, last: new Date().toISOString(), err: null, conflict: 0, hash });
   } catch (e) {
     busy = false; setConfig({ pending: true, err: String(e.message || e) });
   }
