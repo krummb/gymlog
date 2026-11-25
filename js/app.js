@@ -460,7 +460,8 @@ function howHtml(id) {
       <div class="glbl">How</div>
       <ol class="gsteps">${g.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
       <div class="glbl bad">Common mistakes</div>
-      <p class="gbad">${esc(g.mistakes)}</p>` : `<p class="gcue">${esc(ex.cue)}</p>`;
+      <p class="gbad">${esc(g.mistakes)}</p>
+      ${(g.extra || []).map(([l, t]) => `<div class="glbl">${esc(l)}</div><p class="gbad ex">${esc(t)}</p>`).join("")}` : `<p class="gcue">${esc(ex.cue)}</p>`;
 }
 const imgsHtml = (id) => `<div class="gimgs gwrap"><div class="guideimg ph">Image coming</div>${[1, 2].map((n) => `<img class="gimg" src="img/${id}-${n}.webp" alt="${esc(db.exercises[id].name)}, picture ${n}" hidden>`).join("")}</div>`;
 

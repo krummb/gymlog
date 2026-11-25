@@ -86,6 +86,7 @@ export const extraExercises = {
   db_lateral_lunge:     { name: "DB Lateral Lunge", type: "weight", scale: DB_SCALE, step: 1, per: "side", handKg: true, rest: 75, start: 6 },
   // Recovery program (2026-11-25): gentle rest-day work
   band_ext_rotation:    { name: "Band External Rotation", type: "bodyweight", step: 2.5, per: "side", rest: 40 },
+  db_side_ext_rotation: { name: "DB Side-Lying External Rotation", type: "weight", scale: DB_SCALE, step: 1, per: "side", rest: 40, start: 1 },
   dead_hang:            { name: "Dead Hang", type: "timed", fixed: true, noKg: true, step: 5, rest: 50 },
   hip_flexor_stretch:   { name: "Hip Flexor Stretch (Half-Kneeling)", type: "timed", fixed: true, noKg: true, step: 5, per: "side", rest: 10 },
   thoracic_rotation:    { name: "Thoracic Rotation (Side-Lying)", type: "bodyweight", step: 2.5, per: "side", rest: 10 },

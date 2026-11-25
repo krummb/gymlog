@@ -300,3 +300,4 @@ footer .drives .drive { height:44px; position:relative; display:flex; align-item
 /* IBM Plex Mono Bold for the timers (0.19.0): live countdown, rest clock in the title bar, warm-up clock */
 @font-face { font-family:"Plex Mono"; src:url("../fonts/plexmono-bold.woff") format("woff"); font-weight:700; font-style:normal; font-display:swap; }
 .lbig, .restclock, .warmclock { font-family:"Plex Mono", "Courier New", monospace; font-weight:700; }
+.gbad.ex { color:inherit; }

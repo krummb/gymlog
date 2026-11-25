@@ -652,7 +652,13 @@ export const GUIDES = {
    "Rotate your forearm outwards, away from your body, as far as is comfortable without the elbow leaving your side.",
    "Return slowly over 2-3 s. Finish all reps, then switch sides."
   ],
-  "mistakes": "elbow drifting away from the body; leaning the torso to fake the range; using a band so strong that the shoulder shrugs"
+  "mistakes": "elbow drifting away from the body; leaning the torso to fake the range; using a band so strong that the shoulder shrugs",
+  "extra": [
+   [
+    "Which band",
+    "a flat resistance band (Theraband style, about 1.5-2 m long, 10-15 cm wide) or a thin tube band with handles, in the lightest strength the gym has (usually labelled light or extra light; colours differ between brands). Not the thick loop bands by the pull-up rig, which are far too strong. The right band lets you do 15 slow reps with the last few still feeling easy."
+   ]
+  ]
  },
  "dead_hang": {
   "cue": "Hang from the bar with straight arms, shoulders gently active, feet off the floor. Breathe and relax.",
@@ -743,5 +749,15 @@ export const GUIDES = {
    "Do both hands."
   ],
   "mistakes": "using a band so strong that the fingers cramp; rushing; bending the wrist"
+ },
+ "db_side_ext_rotation": {
+  "cue": "Lie on your side, elbow pinned to your ribs and bent 90 degrees, a 1-2 kg dumbbell in the top hand. Rotate the forearm up towards the ceiling, lower slowly. (Per side.)",
+  "steps": [
+   "Lie on your side with a rolled towel between the top elbow and your ribs. Bend the elbow 90 degrees, forearm across your stomach, a 1-2 kg dumbbell in the hand.",
+   "Keeping the elbow pinned to your ribs, rotate the forearm up towards the ceiling.",
+   "Lower slowly over 2-3 s.",
+   "Finish all reps, then roll over and do the other side."
+  ],
+  "mistakes": "elbow drifting away from the ribs; going heavier than 1-2 kg so the shoulder shrugs; swinging the weight up instead of rotating"
  }
 };
