@@ -20,7 +20,10 @@ const fmtDate = (iso) => iso.slice(0, 10);
 function setsText(ex, sets) {
   if (!sets.length) return "-";
   const unit = ex.type === "timed" ? "s" : ex.repUnit || "";
-  if (ex.type === "timed") return sets.map((s) => (s.kg ? `${s.reps} s (+${s.kg} kg)` : `${s.reps} s`)).join(", ");
+  if (ex.type === "timed") {
+    const sides = ex.per === "direction" ? ["front", "back", "left", "right"] : ex.per === "leg" || ex.per === "side" ? ["L", "R"] : null;
+    return sets.map((s, i) => (sides ? sides[i % sides.length] + " " : "") + (s.kg ? `${s.reps} s (+${s.kg} kg)` : `${s.reps} s`)).join(", ");
+  }
   const groups = [];
   for (const s of sets) {
     const g = groups[groups.length - 1];
@@ -30,7 +33,7 @@ function setsText(ex, sets) {
 }
 
 export function buildLog(db) {
-  const L = [`# GymLog results`, ``, `Generated ${new Date().toISOString()} · kg · weights for dumbbells are per hand · reps listed per set in order`, ``];
+  const L = [`# GymLog results`, ``, `Generated ${new Date().toISOString()} · kg · weights for dumbbells are per hand · reps listed per set in order · timed per-leg/side holds listed L, R in order`, ``];
   L.push(`## Current exercise weights`, ``);
   for (const e of Object.values(db.exercises)) {
     if (!e.last) continue;
@@ -44,14 +47,16 @@ export function buildLog(db) {
     const w = (p ? p.workouts : db.workouts)[s.workout];
     const mins = s.finishedAt ? Math.round((new Date(s.finishedAt) - new Date(s.startedAt)) / 60000) : null;
     L.push(`### ${fmtDate(s.startedAt)} · ${p ? p.code + " · " : ""}Workout ${s.workout}${w ? " · " + w.name : ""}${s.short ? " · short version" : ""}${mins != null ? ` · ${mins} min` : " · in progress / unfinished"}`);
-    if (s.warmup) L.push(`- Warm-up: ${s.warmup === true ? "done" : s.warmup}${s.warmSec ? ` (${Math.round(s.warmSec / 60)} min)` : ""}`);
+    if (s.warmup) L.push(`- Warm-up: ${s.warmEx ? s.warmEx : s.warmup === true ? "done" : s.warmup}${s.warmSec ? ` (${Math.round(s.warmSec / 60)} min)` : ""}`);
     const order = w ? w.items.map((i) => i.ex).filter((id) => s.entries[id]) : [];
     for (const id of Object.keys(s.entries)) if (!order.includes(id)) order.push(id);
     for (const id of order) {
       const en = s.entries[id], ex = db.exercises[id];
       if (!ex) continue;
       const body = en.status === "skipped" ? "skipped" : setsText(ex, en.sets || []);
-      L.push(`- ${ex.name}: ${body}`);
+      const m = en.machine && Object.keys(en.machine).length ? en.machine : null;
+      const mt = m ? " · machine: " + [m.type, m.dist && m.dist + " km", m.kcal && m.kcal + " kcal", m.hr && "avg HR " + m.hr, m.watts && "avg " + m.watts + " W", m.pace && m.pace + "/500 m", m.rate && "rate " + m.rate, m.level && "level " + m.level].filter(Boolean).join(", ") : "";
+      L.push(`- ${ex.name}: ${body}${mt}`);
     }
     L.push(``);
   }

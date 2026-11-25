@@ -21,6 +21,11 @@ export const repStepOf = (ex) => (ex.type === "timed" ? ex.step : ex.repStep || 
 export const repCap = (ex) => (ex.type === "timed" ? "SECONDS" : ex.repUnit === "m" ? "METRES" : ex.repUnit ? ex.repUnit.toUpperCase() : "REPS");
 const PER = { hand: "per hand", side: "per side", leg: "per leg", direction: "per direction" };
 // Weight per hand: dumbbell in each hand (per "hand", or handKg on per-leg exercises like split squats)
+// Timed per-leg/per-side holds log one entry per side; a "set" for the person is left + right together
+// (per direction: all four). grp = entries per set.
+export const grp = (ex) => !ex || ex.type !== "timed" ? 1 : ex.per === "direction" ? 4 : ex.per === "leg" || ex.per === "side" ? 2 : 1;
+export const setNoOf = (ex, n) => Math.ceil(n / grp(ex));
+export const setsOf = (ex, item) => Math.ceil(item.sets / grp(ex));
 export const perHand = (ex) => ex.per === "hand" || !!ex.handKg;
 export const perText = (ex) => (ex.handKg && ex.per && ex.per !== "hand" ? `weight per hand, reps ${PER[ex.per]}` : PER[ex.per] || "");
 // "8–10", "30 m", "8–10/leg": the rep range of one item

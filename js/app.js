@@ -149,7 +149,8 @@ function today() {
   const warming = !!s?.warmStart;
   const wAt = s?.warmAt ? new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "";
   const wMin = s?.warmSec ? Math.max(1, Math.round(s.warmSec / 60)) + " min" : "done";
-  const wInfo = warm ? (wAt && s.warmSec ? `${wAt} · ${wMin}` : wMin) : warming ? `${wAt} · running` : "bike / row";
+  const wm = s?.warmEx ? s.warmEx + " · " : "";
+  const wInfo = warm ? wm + (wAt && s.warmSec ? `${wAt} · ${wMin}` : wMin) : warming ? wm + `${wAt} · running` : s?.warmEx || "bike / row";
   const wActive = ui.active === WARM;
   const wIc = wActive ? I.cur : warm ? I.check : I.page("var(--ic-page)");
   const rows = [`<button class="row ${warm ? "done" : "todo"} ${wActive ? "active" : ""}" data-act="warmup">
@@ -248,6 +249,10 @@ function fkeys() {
 }
 
 const WARM = "__warm";
+const MACHINES = ["Bike", "Row", "SkiErg", "Assault"];
+const isMachine = (id) => id === "cardio_z2" || id === "cardio_4x4";
+const MFIELDS = [["dist", "Distance", "km"], ["kcal", "Calories", "kcal"], ["hr", "Avg heart rate", "bpm"], ["watts", "Avg watts", "W"], ["pace", "Avg pace", "/500 m"], ["rate", "Avg rate", "spm/rpm"], ["level", "Level / damper", ""]];
+const machChips = (cur, act) => `<div class="seg mchips">${MACHINES.map((m) => `<button class="btn ${cur === m ? "primary" : ""}" data-act="${act}" data-v="${m}">${m}</button>`).join("")}</div>`;
 const fmtClock = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
 const hasShort = () => !!(workout().short && workout().short.length);
@@ -270,6 +275,7 @@ function warmDetail() {
       <div class="detail">
         <div class="warmclock ${elapsed >= 300 ? "reached" : ""}" id="warmclock">${fmtClock(elapsed)}</div>
         <div class="last">${done ? (s.warmSec ? "Warm-up done · " + fmtClock(s.warmSec) + (s.warmAt ? " · started " + new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "") : "Warm-up done") : running && s.warmAt ? "Started " + new Date(s.warmAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + " · target 5–10 min" : "Target 5–10 min · easy bike or row, enough to feel warm"}</div>
+        ${machChips(s?.warmEx, "warmex")}
         ${done ? `<button class="btn" data-act="warmundo">Undo warm-up</button>`
           : running ? `<button class="btn primary log" data-act="warmstop">Stop · warm-up done</button>`
           : `<button class="btn primary log" data-act="warmstart">Start warm-up</button><button class="btn" data-act="warmdone">Mark done (no timer)</button>`}
@@ -278,6 +284,12 @@ function warmDetail() {
       </div>
     </div>`;
   return { top, info: "" };
+}
+
+function machinePanel(id, s) {
+  const m = (s && s.entries[id] && s.entries[id].machine) || {};
+  return `<div class="mach"><div class="mhead">Machine screen <span class="small">(optional)</span></div>${machChips(m.type, "machex")}
+    <div class="mgrid">${MFIELDS.map(([f, l, u]) => `<label class="mf"><span>${l}${u ? " <i>" + u + "</i>" : ""}</span><input class="mi" data-ex="${id}" data-f="${f}" type="text" inputmode="${f === "pace" ? "text" : "decimal"}" value="${esc(m[f] || "")}"></label>`).join("")}</div></div>`;
 }
 
 function detail() {
@@ -294,13 +306,13 @@ function detail() {
 
   const hand = L.perHand(ex) ? "/hand" : "";
   const tgt = timed
-    ? (ex.fixed ? `Today: ${item.sets} × ${dur(t.reps)}${ex.per && ex.per !== "hand" ? " (" + ex.per + "s alternate)" : ""}${t.kg ? " +" + L.fmtKg(t.kg) + " " + L.unitOf(ex) : ""}`
-      : t.first ? `First time: start at ${t.reps} s` : `Today: ${item.sets} × ${t.reps} s ↑`)
+    ? (ex.fixed ? `Today: ${L.setsOf(ex, item)} × ${dur(t.reps)}${L.grp(ex) === 2 ? " per " + ex.per : L.grp(ex) === 4 ? " each direction" : ""}${t.kg ? " +" + L.fmtKg(t.kg) + " " + L.unitOf(ex) : ""}`
+      : t.first ? `First time: start at ${t.reps} s` : `Today: ${L.setsOf(ex, item)} × ${t.reps} s ↑`)
     : t.first
       ? (ex.type === "bodyweight" ? `First time: ${item.min === item.max ? item.min : item.min + "–" + item.max} ${ex.repUnit || "reps"} per set, ${prog().light ? "easy, 3–4 reps in reserve" : "stop about 1 rep before failure"}` : `First time: pick a weight that leaves 3–4 reps in reserve`)
       : `Today: ${t.kg ? L.fmtKg(t.kg) + " " + L.unitOf(ex) + hand : "BW"} · ${item.sets} × ${L.rangeText(ex, item)}${t.up ? " ↑" : ""}`;
 
-  const logged = st.sets.map((x, i) => `<div class="logged">[x] Set ${i + 1} · ${timed ? dur(x.reps) + (x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : "") : (x.kg ? L.fmtKg(x.kg) + " " + L.unitOf(ex) : "BW") + " × " + x.reps + (ex.repUnit ? " " + ex.repUnit : "")}</div>`).join("");
+  const logged = st.sets.map((x, i) => `<div class="logged">[x] Set ${L.setNoOf(ex, i + 1)}${L.grp(ex) > 1 ? " · " + sideOf(ex, i + 1).toLowerCase() : ""} · ${timed ? dur(x.reps) + (x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : "") : (x.kg ? L.fmtKg(x.kg) + " " + L.unitOf(ex) : "BW") + " × " + x.reps + (ex.repUnit ? " " + ex.repUnit : "")}</div>`).join("");
 
   const stepper = (field, label, val, color) => `
     <div class="stepper"><div class="sr">
@@ -327,7 +339,7 @@ function detail() {
 
   const top = `
     <div class="panel">
-      ${exhead(esc(ex.name), st.status === "skipped" ? "skipped" : finished ? "done" : `Set ${setNo} of ${item.sets}${sideOf(ex, setNo) ? " · " + sideOf(ex, setNo).toLowerCase() : ""}`)}
+      ${exhead(esc(ex.name), st.status === "skipped" ? "skipped" : finished ? "done" : `Set ${L.setNoOf(ex, setNo)} of ${L.setsOf(ex, item)}${sideOf(ex, setNo) ? " · " + sideOf(ex, setNo).toLowerCase() : ""}`)}
       <div class="detail">
         ${finished ? `<button class="btn" data-act="undo">Undo last</button>` : `
           <div class="steppers">
@@ -335,7 +347,7 @@ function detail() {
             ${stepper("reps", timed ? "seconds" : L.repCap(ex).toLowerCase(), repVal, "var(--green)")}
           </div>
           <div class="logrow">${timed
-            ? `<button class="btn primary log" data-act="liveopen">▶ Set ${setNo} <span class="of">(of ${item.sets})</span> · live timer</button><button class="btn undo" data-act="log">Log</button>`
+            ? `<button class="btn primary log" data-act="liveopen">▶ Set ${L.setNoOf(ex, setNo)} <span class="of">(of ${L.setsOf(ex, item)})</span>${L.grp(ex) > 1 ? " · " + esc(sideOf(ex, setNo).toLowerCase()) : ""} · live timer</button><button class="btn undo" data-act="log">Log${L.grp(ex) > 1 ? " " + esc(sideOf(ex, setNo).split(" ")[0].toLowerCase()) : ""}</button>`
             : `<button class="btn primary log" data-act="log">Log set ${setNo} <span class="of">(of ${item.sets})</span> · ${planText(pl)}</button>`}
           ${st.sets.length ? `<button class="btn undo" data-act="undo">Undo</button>` : ""}</div>`}
       </div>
@@ -348,6 +360,7 @@ function detail() {
           <div class="dinfo"><div class="tgt">${esc(tgt)}</div><div class="last">${esc(L.lastText(ex))}</div><div class="cue">${esc(ex.cue)}</div></div>
         </div>
         ${logged}
+        ${isMachine(item.ex) ? machinePanel(item.ex, s) : ""}
         <div class="noterow"><label for="xnote">Note</label><input id="xnote" data-ex="${item.ex}" value="${esc(ex.note)}" placeholder="seat height, notch, how it felt…"></div>
         ${hint ? `<div class="hint">${esc(hint)}</div>` : ""}
       </div>
@@ -386,14 +399,14 @@ function programs() {
         const ex = db.exercises[it.ex];
         const timed = ex.type === "timed";
         return `<div class="prow ${i % 2 ? "" : "alt"}"><span class="nmcell"><span class="nm">${esc(ex.name)}${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}</span><button class="restbtn ${ex.rest ? "custom" : ""}" data-act="prest" data-ex="${it.ex}" aria-label="Rest time for ${esc(ex.name)}">rest ${fmtRest(L.restFor(db, ex))}</button></span>
-          <span class="mini"><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="-1" aria-label="Fewer sets">−</button><b>${it.sets}</b><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="1" aria-label="More sets">+</button></span>
+          <span class="mini"><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="-1" aria-label="Fewer sets">−</button><b>${L.setsOf(ex, it)}</b><button class="btn" data-act="psets" data-l="${l}" data-i="${i}" data-d="1" aria-label="More sets">+</button></span>
           <span><button class="btn stepbtn" data-act="prange" data-l="${l}" data-i="${i}" aria-label="Edit reps">${timed ? it.min + (ex.fixed ? "s" : "s+") : it.min === it.max ? it.min : it.min + "–" + it.max}</button></span>
           <span>${ex.scale ? `<button class="btn stepbtn" data-act="exdlg" data-ex="${it.ex}">scale</button>` : `<button class="btn stepbtn" data-act="pstep" data-ex="${it.ex}">${L.fmtKg(ex.step)}${timed ? "s" : ""}</button>`}</span>
           <span><button class="btn stepbtn xbtn" data-act="premove" data-l="${l}" data-i="${i}" aria-label="Remove ${esc(ex.name)} from workout ${l}">×</button></span></div>`;
       }).join("")}
       <div class="status"><button class="btn" data-act="allsets" data-l="${l}">All to 3 sets</button> <button class="btn" data-act="padd" data-l="${l}">+ Add exercise</button></div>
       <div class="shortlist small">${w.short && w.short.length
-        ? `<b>Short version</b> (from the PT): ${w.short.map((it) => `${esc(db.exercises[it.ex] ? db.exercises[it.ex].name : it.ex)} ${it.sets}×${db.exercises[it.ex] && db.exercises[it.ex].type === "timed" ? dur(it.min) : it.min === it.max ? it.min : it.min + "–" + it.max}`).join(" · ")}`
+        ? `<b>Short version</b> (from the PT): ${w.short.map((it) => `${esc(db.exercises[it.ex] ? db.exercises[it.ex].name : it.ex)} ${db.exercises[it.ex] ? L.setsOf(db.exercises[it.ex], it) : it.sets}×${db.exercises[it.ex] && db.exercises[it.ex].type === "timed" ? dur(it.min) : it.min === it.max ? it.min : it.min + "–" + it.max}`).join(" · ")}`
         : "No short version yet."}</div>
     </div>`;
   }).join("") + `<p class="small">Tap “rest” under a name to set the rest time for that exercise (it applies wherever the exercise is used; default is set in Settings). Tap reps to change the range, a step size to change it (one machine notch), or “scale” for machines with a weight stack. Timed exercises: “60s” is a fixed hold time (plank); “20s+” is a starting time, then the target is your last best + the step. SS = superset with the next row.</p>`;
@@ -571,10 +584,11 @@ function liveTick() {
 function liveView() {
   const lv = ui.live, ex = db.exercises[lv.ex], item = items().find((i) => i.ex === lv.ex);
   const s = session(), sets = s && s.entries[lv.ex] ? s.entries[lv.ex].sets : [];
-  const of = item ? item.sets : 1, setNo = Math.min(of, sets.length + (lv.phase === "done" ? 0 : 1));
+  const of = item ? L.setsOf(ex, item) : 1, setNo = Math.min(of, L.setNoOf(ex, sets.length + (lv.phase === "done" ? 0 : 1)));
+  const curN = sets.length + 1; // entry number (one per side)
   const kgTxt = lv.kg ? ` +${L.fmtKg(lv.kg)} ${L.unitOf(ex)}` : "";
   // Per-leg / per-side holds: one set per side, odd sets left, even sets right
-  const sideTxt = sideOf(ex, setNo);
+  const sideTxt = sideOf(ex, curN);
   const side = sideTxt ? `<div class="lside">${sideTxt.toUpperCase()}</div>` : "";
   const st = (f, label, val) => `<div class="lstep"><span class="lcap">${label}</span><div class="sr">
       <button class="btn sq" data-act="livestep" data-f="${f}" data-v="-1" aria-label="Less ${label}">${I.minus}</button><div class="val">${val}</div>
@@ -596,7 +610,7 @@ function liveView() {
   return `<div class="overlay live"><div class="win">
     <div class="title">${esc(ex.name)} · set ${setNo} of ${of}${sideTxt ? " · " + esc(sideTxt.toLowerCase()) : ""}<button class="x" data-act="liveclose" aria-label="Close">×</button></div>
     <div class="detail lbody">${main}
-      ${sets.length ? `<div class="lsets">${sets.map((x, i) => `Set ${i + 1}: ${dur(x.reps)}${x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : ""}`).join("<br>")}</div>` : ""}
+      ${sets.length ? `<div class="lsets">${sets.map((x, i) => `Set ${L.setNoOf(ex, i + 1)}${L.grp(ex) > 1 ? " · " + sideOf(ex, i + 1).toLowerCase() : ""}: ${dur(x.reps)}${x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : ""}`).join("<br>")}</div>` : ""}
     </div></div></div>`;
 }
 
@@ -653,6 +667,12 @@ const act = {
     const n = firstOpenItem(); setActive(n ? n.ex : null);
   },
   warmdone: () => { const s = ensureSession(); if (!s) return; s.warmup = true; s.warmSec = 0; s.warmAt = null; persist(); const n = firstOpenItem(); setActive(n ? n.ex : null); },
+  warmex: (v) => { const s = ensureSession(); if (!s) return; s.warmEx = s.warmEx === v ? null : v; persist(); },
+  machex: (v) => {
+    const s = ensureSession(); if (!s || !ui.active) return;
+    const m = (L.entryFor(s, ui.active).machine = L.entryFor(s, ui.active).machine || {});
+    m.type = m.type === v ? null : v; persist();
+  },
   warmundo: () => { const s = session(); if (!s) return; s.warmup = false; s.warmStart = null; s.warmAt = null; s.warmSec = 0; persist(); },
   inc: (f) => bump(f, 1),
   dec: (f) => bump(f, -1),
@@ -986,7 +1006,8 @@ const act = {
   },
   psets: (_, el) => {
     const it = db.workouts[el.dataset.l].items[+el.dataset.i];
-    it.sets = Math.min(5, Math.max(1, it.sets + +el.dataset.d)); persist();
+    const g = L.grp(db.exercises[it.ex]);
+    it.sets = Math.min(5 * g, Math.max(g, it.sets + +el.dataset.d * g)); persist();
   },
   allsets: (_, el) => { db.workouts[el.dataset.l].items.forEach((it) => (it.sets = Math.max(it.sets, 3))); persist(); },
   pstep: (_, el) => {
@@ -1038,6 +1059,13 @@ document.addEventListener("change", (e) => {
     const ex = db.exercises[t.dataset.ex], v = t.value.trim();
     if (v === "") delete ex.rest; else { const sec = parseRest(v); if (sec) ex.rest = sec; else alert("Use seconds (90) or minutes:seconds (1:30), between 10 s and 15 min."); }
     persist(); act.guide(); render();
+  }
+  if (t.classList.contains("mi")) {
+    const s = ensureSession(); if (!s) return;
+    const e = L.entryFor(s, t.dataset.ex);
+    e.machine = e.machine || {};
+    const v = t.value.trim(); if (v) e.machine[t.dataset.f] = v; else delete e.machine[t.dataset.f];
+    persist();
   }
   if (t.id === "gnote") { db.settings.globalNote = t.value; persist(); }
   if (t.id === "syncrepo") { const v = t.value.trim().replace(/^https?:\/\/github.com\//, "").replace(/\.git$/, ""); Sync.setConfig({ repo: v, hash: {} }); }

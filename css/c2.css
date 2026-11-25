@@ -280,3 +280,12 @@ footer .drives .drive { height:44px; position:relative; display:flex; align-item
 .lside { font:bold 30px "Segoe UI", Tahoma, sans-serif; letter-spacing:2px; color:var(--teal); }
 .lside.next { font-size:20px; letter-spacing:0; }
 .overlay.live.hiviz .lside { color:#000; }
+
+/* machine picker + machine-screen data (0.18.0) */
+.mchips .btn { height:34px; }
+.mach { display:flex; flex-direction:column; gap:4px; }
+.mhead { font-weight:bold; color:var(--amber); }
+.mgrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:4px 6px; }
+.mf { display:flex; flex-direction:column; gap:1px; font-size:12px; }
+.mf i { font-style:normal; color:var(--dim, #888); }
+.mf input { width:100%; box-sizing:border-box; height:28px; padding:0 6px; border:1px solid var(--line); background:var(--note-bg); color:var(--txt); font:inherit; min-width:0; }
