@@ -531,7 +531,17 @@ export const GUIDES = {
    "Land on your left leg, knee bent and over your toes, hips back. Hold still for 2 s.",
    "Push back to the right. One push each way is one rep per side. Start with short jumps."
   ],
-  "mistakes": "knee caving in on landing; landing stiff-legged; jumping longer than you can control. Stop the set when the landings get sloppy"
+  "mistakes": "knee caving in on landing; landing stiff-legged; jumping longer than you can control. Stop the set when the landings get sloppy",
+  "extra": [
+   [
+    "Space",
+    "the bounds go back and forth over the same two spots, they don't travel. Hops of about 50 cm are enough, so a clear strip about 2 m wide and 1 m deep works. Videos with 3 m jumps are the advanced version. The hold on landing matters more than the distance."
+   ],
+   [
+    "No room at all?",
+    "Use Lateral Step-Up (in the exercise swap list)."
+   ]
+  ]
  },
  "slider_lateral_push": {
   "cue": "Sit into the standing leg, push the slider foot straight out sideways, then pull it back. Like a skating push. (Per side.)",
@@ -759,5 +769,15 @@ export const GUIDES = {
    "Finish all reps, then roll over and do the other side."
   ],
   "mistakes": "elbow drifting away from the ribs; going heavier than 1-2 kg so the shoulder shrugs; swinging the weight up instead of rotating"
+ },
+ "lateral_step_up": {
+  "cue": "Stand side-on to a bench. Step up with the near leg and drive up through it, lower slowly. Alternative to Skater Bound when there's no space to jump. (Per side.)",
+  "steps": [
+   "Stand side-on to a low bench, about knee height or lower, the near foot flat on top.",
+   "Keep your weight on the near leg and push through the whole foot to stand up on the bench. The other foot only touches down lightly or hovers.",
+   "Lower over 3 s until the free foot touches the floor, keeping the knee over the toes.",
+   "Finish all reps, then switch sides. Add a dumbbell at your chest when 3 × 8 feels easy."
+  ],
+  "mistakes": "pushing off the floor foot; knee caving in; a bench so high that the hips tilt. Use a lower step if the knee hurts"
  }
 };

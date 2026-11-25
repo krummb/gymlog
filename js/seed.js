@@ -79,6 +79,7 @@ export const extraExercises = {
   side_plank:           { name: "Side Plank", type: "timed", fixed: true, noKg: true, step: 5, per: "side", rest: 40 },
   tibialis_raise:       { name: "Tibialis Raise", type: "bodyweight", step: 2.5, rest: 50 },
   skater_bound:         { name: "Skater Bound", type: "bodyweight", step: 2.5, per: "side", rest: 120 },
+  lateral_step_up:      { name: "Lateral Step-Up", type: "bodyweight", step: 2.5, per: "side", rest: 75 },
   slider_lateral_push:  { name: "Slider Lateral Push", type: "bodyweight", step: 2.5, per: "side", rest: 60 },
   low_walk:             { name: "Low Walk", type: "bodyweight", step: 2.5, repUnit: "m", repStep: 5, rest: 75 },
   db_sl_rdl:            { name: "DB Single-Leg RDL", type: "weight", scale: DB_SCALE, step: 1, per: "leg", rest: 75, start: 8 },
