@@ -347,7 +347,7 @@ function detail() {
             ${stepper("reps", timed ? "seconds" : L.repCap(ex).toLowerCase(), repVal, "var(--green)")}
           </div>
           <div class="logrow">${timed
-            ? `<button class="btn primary log" data-act="liveopen">▶ Set ${L.setNoOf(ex, setNo)} <span class="of">(of ${L.setsOf(ex, item)})</span>${L.grp(ex) > 1 ? " · " + esc(sideOf(ex, setNo).toLowerCase()) : ""} · live timer</button><button class="btn undo" data-act="log">Log${L.grp(ex) > 1 ? " " + esc(sideOf(ex, setNo).split(" ")[0].toLowerCase()) : ""}</button>`
+            ? `<button class="btn primary log" data-act="liveopen">${liveLabel(ex, item, setNo)}</button><button class="btn undo" data-act="log">${L.grp(ex) > 1 ? (setNo % L.grp(ex) === 0 ? "Log set" : "Log " + esc(sideOf(ex, setNo).split(" ")[0].toLowerCase())) : "Log"}</button>`
             : `<button class="btn primary log" data-act="log">Log set ${setNo} <span class="of">(of ${item.sets})</span> · ${planText(pl)}</button>`}
           ${st.sets.length ? `<button class="btn undo" data-act="undo">Undo</button>` : ""}</div>`}
       </div>
@@ -553,9 +553,10 @@ function beep(f = 880, d = 0.12) {
 async function wake(on) {
   try { if (on && navigator.wakeLock && !wakeLock) wakeLock = await navigator.wakeLock.request("screen"); if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; } } catch (e) {}
 }
-function liveGo(phase, sec) {
+function liveGo(phase, sec, endAt) {
   const lv = ui.live; lv.phase = phase; lv.t = Date.now(); lv.end = sec ? lv.t + sec * 1000 : null; lastBeep = null;
-  if (phase === "prep") lv.end = lv.t + lv.prep * 1000;
+  if (phase === "rest") lv.restSec = sec;
+  if (phase === "prep") lv.end = endAt || lv.t + lv.prep * 1000;
   if (phase === "hold") { lv.goalHit = false; beep(1046, 0.35); }
   render(); liveTick();
 }
@@ -567,7 +568,9 @@ function liveTick() {
   let hv = false;
   if (lv.phase === "prep" || lv.phase === "rest") {
     const left = Math.ceil((lv.end - now) / 1000);
-    if (left <= 0) { liveGo(lv.phase === "rest" && lv.prep ? "prep" : "hold"); return; }
+    // the get-ready is the last part of the rest, so the hold starts exactly when the rest is up
+    if (lv.phase === "rest" && lv.prep && lv.restSec && left <= Math.min(lv.prep, lv.restSec)) { liveGo("prep", null, lv.end); return; }
+    if (left <= 0) { liveGo("hold"); return; }
     if (left <= 3 && lastBeep !== left) { lastBeep = left; beep(660, 0.1); }
     hv = left <= 3;
     if (el) el.textContent = fmtClock(left);
@@ -581,6 +584,15 @@ function liveTick() {
   if (ov) ov.classList.toggle("hiviz", hv);
   liveT = setTimeout(liveTick, 200);
 }
+// Blue button text. Per-side holds: "Left side · set 1 (of 2)", then "Right side · finishes set 1 (of 2)"
+function liveLabel(ex, item, n) {
+  const g = L.grp(ex), no = L.setNoOf(ex, n), of = `<span class="of">(of ${L.setsOf(ex, item)})</span>`;
+  if (g === 1) return `▶ Set ${no} ${of} · live timer`;
+  const side = esc(sideOf(ex, n).split(" ")[0]);
+  const sd = ex.per === "direction" ? side : side + " side";
+  return n % g === 0 ? `▶ ${sd} · finishes set ${no} ${of}` : `▶ ${sd} · set ${no} ${of}`;
+}
+
 function liveView() {
   const lv = ui.live, ex = db.exercises[lv.ex], item = items().find((i) => i.ex === lv.ex);
   const s = session(), sets = s && s.entries[lv.ex] ? s.entries[lv.ex].sets : [];
@@ -602,7 +614,7 @@ function liveView() {
   else if (lv.phase === "prep") main = `${side}<div class="lphase prep">Get ready</div><div class="lbig prep" id="livebig"></div>
       <div class="lsub">then ${(ex.live || "hold").toLowerCase()} ${dur(lv.goal)}${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start now</button>`;
   else if (lv.phase === "hold") main = `${side}<div class="lphase ${lv.goalHit ? "over" : "hold"}">${lv.goalHit ? "Goal reached · keep going" : ex.live || "Hold"}</div><div class="lbig ${lv.goalHit ? "over" : "hold"}" id="livebig"></div>
-      <div class="lsub">goal ${dur(lv.goal)}${kgTxt}</div><button class="btn primary lbtn stop" data-act="livestop">■ Stop · log set</button>`;
+      <div class="lsub">goal ${dur(lv.goal)}${kgTxt}</div><button class="btn primary lbtn stop" data-act="livestop">■ Stop · log ${L.grp(ex) > 1 && curN % L.grp(ex) !== 0 ? esc(sideOf(ex, curN).split(" ")[0].toLowerCase()) + " side" : "set"}</button>`;
   else if (lv.phase === "rest") main = `${sideTxt ? `<div class="lside next">Next: ${esc(sideTxt.toLowerCase())}</div>` : ""}<div class="lphase rest">${ex.liveRest || "Rest"} · ${ex.live ? "interval" : "set"} ${setNo} of ${of} next</div><div class="lbig rest" id="livebig"></div>
       <div class="lsub">Last ${ex.live ? "interval" : "set"}: ${dur(lv.held)}${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start next set now</button><button class="btn lbtn" data-act="liveend">End ${esc(ex.name)} here</button>`;
   else main = `<div class="lphase over">All ${of} sets done</div><div class="lsub">${sets.map((x) => dur(x.reps)).join(" · ")}${kgTxt}</div>
@@ -934,7 +946,7 @@ const act = {
     else {
       const ex = db.exercises[lv.ex], n = r.done ? 0 : L.itemState(session(), item).sets.length;
       // left then right back to back: no rest after the left side, straight to get-ready for the right
-      if (sideOf(ex, n) && n % 2 === 1 && ex.per !== "direction") { ui.restEnd = null; liveGo(lv.prep ? "prep" : "hold"); }
+      if (sideOf(ex, n) && n % 2 === 1 && ex.per !== "direction") { ui.restEnd = null; if (lv.prep) liveGo("prep", null, Date.now() + Math.min(3, lv.prep) * 1000); else liveGo("hold"); }
       else { const sec = L.restFor(db, ex); startRest(sec); liveGo("rest", sec); }
     }
   },

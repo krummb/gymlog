@@ -289,3 +289,10 @@ footer .drives .drive { height:44px; position:relative; display:flex; align-item
 .mf { display:flex; flex-direction:column; gap:1px; font-size:12px; }
 .mf i { font-style:normal; color:var(--dim, #888); }
 .mf input { width:100%; box-sizing:border-box; height:28px; padding:0 6px; border:1px solid var(--line); background:var(--note-bg); color:var(--txt); font:inherit; min-width:0; }
+
+/* live timer: everything in the top part of the screen (phone sits in a pouch, 0.18.2) */
+.lbody { justify-content:flex-start; gap:8px; padding:10px 16px 16px; }
+.lbody .lsets { margin-top:auto; }
+.lbig { font-size:min(30vw, 150px); }
+.lbtn.stop { min-height:84px; }
+.lbtn { min-height:56px; }
