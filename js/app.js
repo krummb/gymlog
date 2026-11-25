@@ -615,6 +615,7 @@ function liveView() {
   else if (lv.phase === "rest") main = `${sideTxt ? `<div class="lside next">Next: ${esc(sideTxt.toLowerCase())}</div>` : ""}<div class="lphase rest">${ex.liveRest || "Rest"} · ${ex.live ? "interval" : "set"} ${setNo} of ${of} next</div><div class="lbig rest" id="livebig"></div>
       <div class="lsub">Last ${ex.live ? "interval" : "set"}: ${dur(lv.held)}${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start next set now</button><button class="btn lbtn" data-act="liveend">End ${esc(ex.name)} here</button>`;
   else main = `<div class="lphase over">All ${of} sets done</div><div class="lsub">${sets.map((x) => dur(x.reps)).join(" · ")}${kgTxt}</div>
+      ${isMachine(lv.ex) ? machinePanel(lv.ex, L.openSession(db)) : ""}
       <button class="btn primary lbtn" data-act="liveclose">Next exercise</button>`;
   return `<div class="overlay live"><div class="win">
     <div class="title">${esc(ex.name)} · set ${setNo} of ${of}${sideTxt ? " · " + esc(sideTxt.toLowerCase()) : ""}<button class="x" data-act="liveclose" aria-label="Close">×</button></div>
@@ -678,8 +679,9 @@ const act = {
   warmdone: () => { const s = ensureSession(); if (!s) return; s.warmup = true; s.warmSec = 0; s.warmAt = null; persist(); const n = firstOpenItem(); setActive(n ? n.ex : null); },
   warmex: (v) => { const s = ensureSession(); if (!s) return; s.warmEx = s.warmEx === v ? null : v; persist(); },
   machex: (v) => {
-    const s = ensureSession(); if (!s || !ui.active) return;
-    const m = (L.entryFor(s, ui.active).machine = L.entryFor(s, ui.active).machine || {});
+    const id = ui.live ? ui.live.ex : ui.active;
+    const s = ensureSession(); if (!s || !id) return;
+    const m = (L.entryFor(s, id).machine = L.entryFor(s, id).machine || {});
     m.type = m.type === v ? null : v; persist();
   },
   warmundo: () => { const s = session(); if (!s) return; s.warmup = false; s.warmStart = null; s.warmAt = null; s.warmSec = 0; persist(); },
