@@ -1,7 +1,7 @@
 // Alternative exercises shown in the hint line (ids, best first). Only shown if they exist and are not already in today's workout.
 export const ALTS = {
   skater_bound: ["slider_lateral_push"], slider_lateral_push: ["db_lateral_lunge", "skater_bound"], db_lateral_lunge: ["slider_lateral_push"], cardio_z2: ["backpack_walk"], backpack_walk: ["cardio_z2"],
-  db_sl_rdl: ["db_rdl"], copenhagen_short: ["side_plank"], side_plank: ["copenhagen_short"], cable_hip_abduction: [], low_walk: [], straight_arm_pulldown: ["reverse_fly"],
+  db_sl_rdl: ["db_rdl"], copenhagen_short: ["side_plank"], side_plank: ["copenhagen_short"], cable_hip_abduction: [], low_walk: [], straight_arm_pulldown: ["reverse_fly"], ball_leg_curl: ["seated_leg_curl", "prone_leg_curl"], seated_leg_curl: ["ball_leg_curl"],
   db_bench: ["bench_press", "push_up"], seated_row: ["one_arm_cable_row", "inverted_row"], db_shoulder_press: ["overhead_press"],
   cable_lateral: ["lateral_raise"], triceps_pushdown: ["overhead_triceps_ext"], face_pull: ["reverse_fly"],
   goblet_squat: ["back_squat"], db_rdl: ["barbell_rdl"], db_split_squat: ["db_reverse_lunge", "db_step_up"],
@@ -29,7 +29,7 @@ export const CATS = {
   ...C("Legs: hinge & glutes", ["deadlift", "trap_bar_deadlift", "db_rdl", "barbell_rdl", "prone_leg_curl", "ham_curl", "back_extension", "cable_pull_through", "hip_thrust", "db_hip_thrust", "glute_bridge"]),
   ...C("Balance & skating", ["single_leg_balance", "copenhagen_short", "copenhagen_long", "cable_hip_abduction", "tibialis_raise", "skater_bound", "slider_lateral_push", "db_lateral_lunge", "low_walk"]),
   ...C("Cardio", ["cardio_4x4", "cardio_z2", "backpack_walk"]),
-  db_sl_rdl: "Legs: hinge & glutes", straight_arm_pulldown: "Back & pull", bfr_leg_extension: "Legs: squat & lunge", side_plank: "Core & carry",
+  db_sl_rdl: "Legs: hinge & glutes", straight_arm_pulldown: "Back & pull", ball_leg_curl: "Legs: hinge & glutes", seated_leg_curl: "Legs: hinge & glutes", bfr_leg_extension: "Legs: squat & lunge", side_plank: "Core & carry",
   ...C("Core & carry", ["plank", "hanging_knee_raise", "ab_wheel", "cable_crunch", "pallof_press", "farmers_carry"]),
 };
 
@@ -44,5 +44,5 @@ export const REST_TEXT = {
   db_split_squat: "about 90 s, after both legs", db_bulgarian: "90–120 s, after both legs", prone_leg_curl: "60–90 s, after both legs",
   farmers_carry: "about 90 s", single_leg_balance: "30 s between legs", copenhagen_short: "45–60 s per side", copenhagen_long: "60 s per side",
   cable_hip_abduction: "45–60 s per side", side_plank: "30–45 s per side", tibialis_raise: "45–60 s", skater_bound: "2 min", slider_lateral_push: "60 s per side",
-  low_walk: "60–90 s", straight_arm_pulldown: "60–90 s", db_lateral_lunge: "60–90 s per side", db_sl_rdl: "60–90 s per leg", cardio_4x4: "the easy part of your ladder level (2–3 min)", cardio_z2: "continuous", backpack_walk: "continuous", bfr_leg_extension: "30 s between sets, cuffs stay on", plank: "about 60 s", pallof_press: "45–60 s per side",
+  low_walk: "60–90 s", straight_arm_pulldown: "60–90 s", db_lateral_lunge: "60–90 s per side", ball_leg_curl: "60–90 s", seated_leg_curl: "60–90 s", db_sl_rdl: "60–90 s per leg", cardio_4x4: "the easy part of your ladder level (2–3 min)", cardio_z2: "continuous", backpack_walk: "continuous", bfr_leg_extension: "30 s between sets, cuffs stay on", plank: "about 60 s", pallof_press: "45–60 s per side",
 };

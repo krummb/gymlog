@@ -623,5 +623,25 @@ export const GUIDES = {
    "Push off the bent leg back to the start. Finish all reps, then switch sides."
   ],
   "mistakes": "knee caving in or shooting past the toes; rounding the back; stepping too short to sit back into the hip"
+ },
+ "ball_leg_curl": {
+  "cue": "Lie on your back, heels on the ball, hips up in a straight line. Curl the ball in with your heels, then roll it out slowly. Back stays on the floor.",
+  "steps": [
+   "Lie on your back with your arms out to the sides, palms down, heels on top of a stability ball.",
+   "Squeeze your glutes and lift your hips until your body is straight from shoulders to heels.",
+   "Keep your hips up and pull the ball towards you by bending your knees, until your feet are flat on the ball.",
+   "Roll it back out over about 3 s, hips still up. Once easy, do it one leg at a time. With sliders, the same move works on a smooth floor."
+  ],
+  "mistakes": "hips dropping as the ball rolls in; arching the lower back; rushing the way out. Stop at any pull near the top of the hamstring"
+ },
+ "seated_leg_curl": {
+  "cue": "Sit with the thigh pad locking your legs down and your back against the pad. Curl your heels under the seat, return slowly. Alternative to Stability Ball Leg Curl.",
+  "steps": [
+   "Set the back pad so your knees line up with the machine's pivot, and the lower pad sits just above your heels.",
+   "Lower the thigh pad until it holds your legs firmly.",
+   "Curl your heels down and back under the seat over about 2 s.",
+   "Let the pad return slowly until your legs are almost straight."
+  ],
+  "mistakes": "lifting the hips off the seat; letting the weight drop back; going so heavy that the lower back takes over"
  }
 };

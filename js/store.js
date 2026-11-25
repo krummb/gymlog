@@ -50,7 +50,7 @@ function mergeExercises(db) {
 // Bump when guides.js cues change and should replace the saved one-line cues (once)
 const GUIDE_REV = 1;
 const REST_REV = 1; // 1: program exercises get the rest times from the PT how-tos; dumbbell exercises get the dumbbell rack scale (only where nothing is set)
-const PROG_REV = 4; // 4: skating doc revision 2026-11-24 (intervals ladder level 1 first in S2, straight-arm pulldown + Z2 20 min in S4)
+const PROG_REV = 5; // 4: skating doc revision 2026-11-24 (intervals ladder level 1 first in S2, straight-arm pulldown + Z2 20 min in S4)
 // 3 was: // 3: Hammer Curl named "DB Hammer Curl" (user had renamed it to Cable by mistake)
 // 2 was: // 2: PT review 2026-11-23: deadlift 3 sets, farmer's carry 40-50 m, Glute Press merged into the old glute_bridge entry (keeps its 46 kg history), shorter leg-curl cue
 // 1: Low B uses the Prone Cable Leg Curl instead of the machine Leg Curl (2026-11-23)
@@ -147,7 +147,11 @@ function migrate(db) {
     if (c && /^Cardio Intervals 4x4/.test(c.name)) { c.name = "Cardio Intervals (SkiErg/Rower)"; c.rest = 120; c.cue = GUIDES.cardio_4x4.cue; }
     const z = db.exercises.cardio_z2; if (z) z.cue = GUIDES.cardio_z2.cue;
   }
-  if (db.programs && db.programs.sk4) db.progRev = Math.max(db.progRev || 0, 4);
+  if ((db.progRev || 0) < 5 && db.programs && db.programs.sk4) {
+    // 5: skating doc 2026-11-25: S1 leg curl is the Stability Ball Leg Curl (2 × 10-12)
+    for (const it of db.programs.sk4.workouts.A.items) if (it.ex === "prone_leg_curl") Object.assign(it, { ex: "ball_leg_curl", sets: 2, min: 10, max: 12 });
+  }
+  if (db.programs && db.programs.sk4) db.progRev = Math.max(db.progRev || 0, 5);
   linkActive(db);
   return db;
 }

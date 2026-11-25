@@ -326,7 +326,7 @@ function detail() {
 
   const top = `
     <div class="panel">
-      ${exhead(esc(ex.name), st.status === "skipped" ? "skipped" : finished ? "done" : `Set ${setNo} of ${item.sets}`)}
+      ${exhead(esc(ex.name), st.status === "skipped" ? "skipped" : finished ? "done" : `Set ${setNo} of ${item.sets}${sideOf(ex, setNo) ? " · " + sideOf(ex, setNo).toLowerCase() : ""}`)}
       <div class="detail">
         ${finished ? `<button class="btn" data-act="undo">Undo last</button>` : `
           <div class="steppers">
@@ -430,6 +430,7 @@ function progCode(name) {
 }
 // Seconds as "45 s", or "4:00" from 2 minutes up
 const dur = (s) => (s >= 120 ? fmtClock(s) : `${s} s`);
+const sideOf = (ex, n) => (ex && ex.type === "timed" && (ex.per === "leg" || ex.per === "side") ? `${n % 2 ? "Left" : "Right"} ${ex.per}` : "");
 const catOf = (id) => { const c = (db.exercises[id] && db.exercises[id].cat) || CATS[id]; return CAT_ORDER.includes(c) ? c : "Other"; };
 function progTags(id) {
   const ls = L.LETTERS.filter((l) => db.workouts[l].items.some((i) => i.ex === id));
@@ -569,25 +570,28 @@ function liveView() {
   const s = session(), sets = s && s.entries[lv.ex] ? s.entries[lv.ex].sets : [];
   const of = item ? item.sets : 1, setNo = Math.min(of, sets.length + (lv.phase === "done" ? 0 : 1));
   const kgTxt = lv.kg ? ` +${L.fmtKg(lv.kg)} ${L.unitOf(ex)}` : "";
+  // Per-leg / per-side holds: one set per side, odd sets left, even sets right
+  const sideTxt = sideOf(ex, setNo);
+  const side = sideTxt ? `<div class="lside">${sideTxt.toUpperCase()}</div>` : "";
   const st = (f, label, val) => `<div class="lstep"><span class="lcap">${label}</span><div class="sr">
       <button class="btn sq" data-act="livestep" data-f="${f}" data-v="-1" aria-label="Less ${label}">${I.minus}</button><div class="val">${val}</div>
       <button class="btn sq" data-act="livestep" data-f="${f}" data-v="1" aria-label="More ${label}">${I.plus}</button></div></div>`;
   let main = "";
-  if (lv.phase === "setup") main = `
+  if (lv.phase === "setup") main = `${side}
       ${st("prep", "Get ready", `<b>${lv.prep}</b><i>s</i>`)}
       ${st("goal", ex.live || "Hold", lv.goal >= 120 ? `<b>${fmtClock(lv.goal)}</b>` : `<b>${lv.goal}</b><i>s</i>`)}
       ${ex.fixed && !ex.noKg ? st("kg", "Added weight", `<i>+</i><b>${L.fmtKg(lv.kg)}</b><i>${L.unitOf(ex)}</i>`) : ""}
       <button class="btn primary lbtn" data-act="livestart">▶ Start</button>`;
-  else if (lv.phase === "prep") main = `<div class="lphase prep">Get ready</div><div class="lbig prep" id="livebig"></div>
+  else if (lv.phase === "prep") main = `${side}<div class="lphase prep">Get ready</div><div class="lbig prep" id="livebig"></div>
       <div class="lsub">then ${(ex.live || "hold").toLowerCase()} ${dur(lv.goal)}${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start now</button>`;
-  else if (lv.phase === "hold") main = `<div class="lphase ${lv.goalHit ? "over" : "hold"}">${lv.goalHit ? "Goal reached · keep going" : ex.live || "Hold"}</div><div class="lbig ${lv.goalHit ? "over" : "hold"}" id="livebig"></div>
+  else if (lv.phase === "hold") main = `${side}<div class="lphase ${lv.goalHit ? "over" : "hold"}">${lv.goalHit ? "Goal reached · keep going" : ex.live || "Hold"}</div><div class="lbig ${lv.goalHit ? "over" : "hold"}" id="livebig"></div>
       <div class="lsub">goal ${dur(lv.goal)}${kgTxt}</div><button class="btn primary lbtn stop" data-act="livestop">■ Stop · log set</button>`;
-  else if (lv.phase === "rest") main = `<div class="lphase rest">${ex.liveRest || "Rest"} · ${ex.live ? "interval" : "set"} ${setNo} of ${of} next</div><div class="lbig rest" id="livebig"></div>
+  else if (lv.phase === "rest") main = `${sideTxt ? `<div class="lside next">Next: ${esc(sideTxt.toLowerCase())}</div>` : ""}<div class="lphase rest">${ex.liveRest || "Rest"} · ${ex.live ? "interval" : "set"} ${setNo} of ${of} next</div><div class="lbig rest" id="livebig"></div>
       <div class="lsub">Last ${ex.live ? "interval" : "set"}: ${dur(lv.held)}${kgTxt}</div><button class="btn lbtn" data-act="liveskiprest">Start next set now</button><button class="btn lbtn" data-act="liveend">End ${esc(ex.name)} here</button>`;
   else main = `<div class="lphase over">All ${of} sets done</div><div class="lsub">${sets.map((x) => dur(x.reps)).join(" · ")}${kgTxt}</div>
       <button class="btn primary lbtn" data-act="liveclose">Next exercise</button>`;
   return `<div class="overlay live"><div class="win">
-    <div class="title">${esc(ex.name)} · set ${setNo} of ${of}<button class="x" data-act="liveclose" aria-label="Close">×</button></div>
+    <div class="title">${esc(ex.name)} · set ${setNo} of ${of}${sideTxt ? " · " + esc(sideTxt.toLowerCase()) : ""}<button class="x" data-act="liveclose" aria-label="Close">×</button></div>
     <div class="detail lbody">${main}
       ${sets.length ? `<div class="lsets">${sets.map((x, i) => `Set ${i + 1}: ${dur(x.reps)}${x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : ""}`).join("<br>")}</div>` : ""}
     </div></div></div>`;

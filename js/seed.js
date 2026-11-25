@@ -84,6 +84,8 @@ export const extraExercises = {
   db_sl_rdl:            { name: "DB Single-Leg RDL", type: "weight", scale: DB_SCALE, step: 1, per: "leg", rest: 75, start: 8 },
   cardio_4x4:           { name: "Cardio Intervals (SkiErg/Rower)", type: "timed", fixed: true, noKg: true, step: 30, rest: 120, live: "Hard", liveRest: "Easy" },
   db_lateral_lunge:     { name: "DB Lateral Lunge", type: "weight", scale: DB_SCALE, step: 1, per: "side", handKg: true, rest: 75, start: 6 },
+  ball_leg_curl:        { name: "Stability Ball Leg Curl", type: "bodyweight", step: 2.5, rest: 75 },
+  seated_leg_curl:      { name: "Mx Seated Leg Curl", type: "weight", step: 2.5, rest: 75 },
   straight_arm_pulldown: { name: "Cable Straight-Arm Pulldown", type: "weight", step: 2.5, rest: 75, start: 10 },
   cardio_z2:            { name: "Steady Cardio Z2 (Bike/Rower)", type: "timed", fixed: true, noKg: true, step: 60, rest: 60, live: "Easy" },
   backpack_walk:        { name: "Backpack Incline Walk", type: "timed", fixed: true, noKg: true, step: 60, rest: 60, live: "Walk" },
@@ -103,7 +105,7 @@ export const seedWorkouts = {
 // Skating program (SK4), S1-S4 as A-D. Week 1 ("learn"): 2 sets on every new exercise; per-leg/per-side holds are
 // one set per leg/side (2 per leg = 4 sets) so the live timer runs each hold.
 export const skatingWorkouts = {
-  A: { name: "S1 Low A - Push-Off", items: [it("single_leg_balance", 4, 30, 30), it("copenhagen_short", 4, 15, 15), it("deadlift", 3, 5, 8), it("db_bulgarian", 3, 8, 10), it("cable_hip_abduction", 2, 12, 15), it("prone_leg_curl", 2, 12, 15), it("calf_raise", 3, 12, 15), it("cardio_z2", 1, 600, 600, { opt: true })] },
+  A: { name: "S1 Low A - Push-Off", items: [it("single_leg_balance", 4, 30, 30), it("copenhagen_short", 4, 15, 15), it("deadlift", 3, 5, 8), it("db_bulgarian", 3, 8, 10), it("cable_hip_abduction", 2, 12, 15), it("ball_leg_curl", 2, 10, 12), it("calf_raise", 3, 12, 15), it("cardio_z2", 1, 600, 600, { opt: true })] },
   B: { name: "S2 Up A - Intervals + Push", items: [it("cardio_4x4", 6, 60, 60), it("pallof_press", 2, 10, 10), it("db_bench", 3, 8, 10), it("pull_up", 4, 3, 3), it("one_arm_row", 3, 10, 12), it("db_shoulder_press", 2, 8, 10, { ss: true }), it("face_pull", 2, 12, 15, { ss: true })] },
   C: { name: "S3 Low B - Skate", items: [it("tibialis_raise", 2, 15, 20), it("single_leg_balance", 4, 30, 30), it("skater_bound", 2, 5, 5), it("goblet_squat", 3, 8, 12), it("db_sl_rdl", 2, 8, 8), it("slider_lateral_push", 2, 8, 8), it("low_walk", 2, 20, 20), it("side_plank", 4, 30, 30), it("cardio_z2", 1, 900, 900, { opt: true })] },
   D: { name: "S4 Up B - Pull + Base", items: [it("back_extension", 2, 10, 12), it("seated_row", 3, 10, 12), it("incline_db_press", 3, 10, 12), it("reverse_fly", 2, 12, 15), it("straight_arm_pulldown", 2, 12, 15), it("hanging_knee_raise", 2, 8, 12), it("cardio_z2", 1, 1200, 1200)] },

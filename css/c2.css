@@ -276,3 +276,7 @@ footer .drives .drive { height:44px; position:relative; display:flex; align-item
 .shorttag { color:var(--amber); }
 .shortlist { padding:4px 6px 8px; color:var(--grey); }
 .shortlist b { color:var(--teal); }
+/* live timer: which leg/side (0.16.1) */
+.lside { font:bold 30px "Segoe UI", Tahoma, sans-serif; letter-spacing:2px; color:var(--teal); }
+.lside.next { font-size:20px; letter-spacing:0; }
+.overlay.live.hiviz .lside { color:#000; }
