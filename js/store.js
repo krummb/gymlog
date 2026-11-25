@@ -136,11 +136,13 @@ function migrate(db) {
     for (const s of Object.values(db.sessions)) if (!s.program) s.program = old && old.savedAt && s.startedAt < old.savedAt ? "mx4" : "fw4";
   }
   if (!db.programs.rc4 && !db.recoveryAdded) { db.programs.rc4 = { name: "Recovery (rest days)", code: "RC4", light: true, workouts: clone(recoveryWorkouts) }; db.recoveryAdded = true; }
-  if (!db.programs.sk4 && !db.skatingAdded) { db.programs.sk4 = { name: "Skating (pre-season)", code: "SK4", workouts: clone(skatingWorkouts) }; db.skatingAdded = true; }
+  if (!db.programs.sk4 && !db.skatingAdded) { db.programs.sk4 = { name: "Skating (pre-season)", code: "SK4", workouts: clone(skatingWorkouts) }; for (const l of Object.keys(skatingShort)) db.programs.sk4.workouts[l].short = clone(skatingShort[l]); db.skatingAdded = true; }
   if (!db.programs[db.activeProgram]) db.activeProgram = Object.keys(db.programs)[0];
-  if ((db.progRev || 0) < 4 && db.programs && db.programs.sk4) {
+  // Before 2026-11-25 SK4 ran S1 Low A, S2 Up A, S3 Low B, S4 Up B as A-D; migrations 4-6 were written for that order
+  const skOld = !!(db.programs.sk4 && db.programs.sk4.workouts.A && /^S1 Low A/.test(db.programs.sk4.workouts.A.name));
+  if ((db.progRev || 0) < 4 && skOld) {
     const w = db.programs.sk4.workouts;
-    w.B = clone(skatingWorkouts.B);
+    w.B = clone(skatingWorkouts.A); w.B.name = "S2 Up A - Intervals + Push";
     const d = w.D.items;
     if (!d.some((i) => i.ex === "straight_arm_pulldown")) { const k = d.findIndex((i) => i.ex === "reverse_fly"); d.splice(k + 1, 0, { ex: "straight_arm_pulldown", sets: 2, min: 12, max: 15 }); }
     d.forEach((i) => { if (i.ex === "cardio_z2" && i.min === 1800) { i.min = 1200; i.max = 1200; } });
@@ -148,18 +150,25 @@ function migrate(db) {
     if (c && /^Cardio Intervals 4x4/.test(c.name)) { c.name = "Cardio Intervals (SkiErg/Rower)"; c.rest = 120; c.cue = GUIDES.cardio_4x4.cue; }
     const z = db.exercises.cardio_z2; if (z) z.cue = GUIDES.cardio_z2.cue;
   }
-  if ((db.progRev || 0) < 5 && db.programs && db.programs.sk4) {
+  if ((db.progRev || 0) < 5 && skOld) {
     // 5: skating doc 2026-11-25: S1 leg curl is the Stability Ball Leg Curl (2 × 10-12)
     for (const it of db.programs.sk4.workouts.A.items) if (it.ex === "prone_leg_curl") Object.assign(it, { ex: "ball_leg_curl", sets: 2, min: 10, max: 12 });
   }
-  if ((db.progRev || 0) < 6 && db.programs && db.programs.sk4) {
+  if ((db.progRev || 0) < 6 && skOld) {
     // 6: short versions from the skating doc; the intervals keep the ladder level set in the full S2
     const w = db.programs.sk4.workouts;
-    for (const l of ["A", "B", "C", "D"]) if (w[l] && !(w[l].short && w[l].short.length)) w[l].short = clone(skatingShort[l]);
+    for (const l of ["A", "B", "C", "D"]) if (w[l] && !(w[l].short && w[l].short.length)) w[l].short = clone(skatingShort[{ A: "B", B: "A", C: "D", D: "C" }[l]]);
     const full = w.B.items.find((i) => i.ex === "cardio_4x4"), sh = w.B.short.find((i) => i.ex === "cardio_4x4");
     if (full && sh) Object.assign(sh, { sets: full.sets, min: full.min, max: full.max });
   }
-  if (db.programs && db.programs.sk4) db.progRev = Math.max(db.progRev || 0, 6);
+  if ((db.progRev || 0) < 7 && skOld) {
+    // 7: skating doc 2026-11-25 renumbered the sessions to the training order: new S1 = old S2 (Up A), S2 = old S1 (Low A),
+    // S3 = old S4 (Up B), S4 = old S3 (Low B). Move the workouts (keeping any edits) and the logged sessions' letters.
+    const w = db.programs.sk4.workouts, o = { ...w }, MAP = { A: "B", B: "A", C: "D", D: "C" };
+    for (const l of ["A", "B", "C", "D"]) { w[l] = o[MAP[l]]; if (/^S\d /.test(w[l].name)) w[l].name = skatingWorkouts[l].name; }
+    for (const s of Object.values(db.sessions || {})) if (s.program === "sk4" && MAP[s.workout]) s.workout = MAP[s.workout];
+  }
+  if (db.programs && db.programs.sk4) db.progRev = Math.max(db.progRev || 0, 7);
   linkActive(db);
   return db;
 }
