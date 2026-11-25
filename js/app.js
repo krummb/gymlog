@@ -206,6 +206,7 @@ function partnerOf(item) {
 function plan(item) {
   const s = session(), ex = db.exercises[item.ex];
   const n = L.itemState(s, item).sets.length + 1, last = n >= item.sets;
+  if (!last && sideOf(ex, n) && n % 2 === 1 && ex.per !== "direction") return { sec: 0, next: item.ex, go: "other side" };
   const p = partnerOf(item), pst = p && L.itemState(s, p);
   if (pst && pst.status === "todo") return pst.sets.length < n ? { sec: 0, next: p.ex, go: db.exercises[p.ex].name } : { sec: L.restFor(db, ex), next: p.ex };
   if (last) {
@@ -910,7 +911,12 @@ const act = {
     const r = logSet(item, lv.kg, held); if (!r) return;
     lv.held = held;
     if (r.done) { lv.phase = "done"; ui.restEnd = null; beep(660, 0.25); }
-    else { const sec = L.restFor(db, db.exercises[lv.ex]); startRest(sec); liveGo("rest", sec); }
+    else {
+      const ex = db.exercises[lv.ex], n = r.done ? 0 : L.itemState(session(), item).sets.length;
+      // left then right back to back: no rest after the left side, straight to get-ready for the right
+      if (sideOf(ex, n) && n % 2 === 1 && ex.per !== "direction") { ui.restEnd = null; liveGo(lv.prep ? "prep" : "hold"); }
+      else { const sec = L.restFor(db, ex); startRest(sec); liveGo("rest", sec); }
+    }
   },
   liveskiprest: () => { ui.restEnd = null; liveGo(ui.live.prep ? "prep" : "hold"); },
   liveend: () => { // stop the exercise here, keep the sets done

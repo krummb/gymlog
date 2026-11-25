@@ -132,6 +132,14 @@ export const recoveryWorkouts = {
   D: { name: "R4 Walk - Arms + Neck", items: [it("backpack_walk", 1, 1800, 1800), it("hammer_curl", 2, 12, 15, { kg: 6 }), it("triceps_pushdown", 2, 12, 15, { kg: 25 }), it("neck_iso", 8, 15, 15), ...forearms()] },
 };
 
+// Short versions (skating doc 2026-11-25, 35-40 min). Holds "2 × 30 s (1 per leg)" = 2 sets.
+export const skatingShort = {
+  A: [it("single_leg_balance", 2, 30, 30), it("copenhagen_short", 2, 15, 15), it("deadlift", 3, 5, 8), it("db_bulgarian", 2, 8, 10), it("cable_hip_abduction", 2, 12, 15), it("calf_raise", 2, 12, 15)],
+  B: [it("cardio_4x4", 6, 60, 60), it("db_bench", 2, 8, 10), it("pull_up", 3, 3, 3), it("one_arm_row", 2, 10, 12)],
+  C: [it("skater_bound", 3, 5, 5), it("goblet_squat", 2, 8, 12), it("db_sl_rdl", 2, 8, 8), it("slider_lateral_push", 2, 8, 8), it("side_plank", 2, 30, 30)],
+  D: [it("seated_row", 2, 10, 12), it("incline_db_press", 2, 10, 12), it("straight_arm_pulldown", 2, 12, 15), it("cardio_z2", 1, 1200, 1200)],
+};
+
 export const seedSettings = {
   globalNote: "Breathe out on effort. Stop if sharp pain.",
   restSec: 120, // rest between exercises (after an exercise's last set); rest between sets is per exercise
