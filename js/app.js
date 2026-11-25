@@ -584,13 +584,10 @@ function liveTick() {
   if (ov) ov.classList.toggle("hiviz", hv);
   liveT = setTimeout(liveTick, 200);
 }
-// Blue button text. Per-side holds: "Left side · set 1 (of 2)", then "Right side · finishes set 1 (of 2)"
+// Blue button text on Today: set number only, never the side
 function liveLabel(ex, item, n) {
   const g = L.grp(ex), no = L.setNoOf(ex, n), of = `<span class="of">(of ${L.setsOf(ex, item)})</span>`;
-  if (g === 1) return `▶ Set ${no} ${of} · live timer`;
-  const side = esc(sideOf(ex, n).split(" ")[0]);
-  const sd = ex.per === "direction" ? side : side + " side";
-  return n % g === 0 ? `▶ ${sd} · finishes set ${no} ${of}` : `▶ ${sd} · set ${no} ${of}`;
+  return `▶ Set ${no} ${of} · live timer`;
 }
 
 function liveView() {
@@ -650,7 +647,7 @@ function tick() {
   }
   if (!text && ui.overUntil > now) { text = "REST OVER"; over = true; }
   if (!text && warming) text = "Warm " + fmtClock(wsec);
-  el.innerHTML = esc(text).replace(/ 0:/, ' <span class="z">0</span>:');
+  el.innerHTML = esc(text).replace(/ 0:/, ' <span class="z">0</span>:').replace(/:0(\d)/, ':<span class="z">0</span>$1');
   el.classList.toggle("over", over);
   if (ui.restEnd || ui.overUntil > now || warming) timerId = setTimeout(tick, 250);
 }
