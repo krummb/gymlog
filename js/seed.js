@@ -84,6 +84,17 @@ export const extraExercises = {
   db_sl_rdl:            { name: "DB Single-Leg RDL", type: "weight", scale: DB_SCALE, step: 1, per: "leg", rest: 75, start: 8 },
   cardio_4x4:           { name: "Cardio Intervals (SkiErg/Rower)", type: "timed", fixed: true, noKg: true, step: 30, rest: 120, live: "Hard", liveRest: "Easy" },
   db_lateral_lunge:     { name: "DB Lateral Lunge", type: "weight", scale: DB_SCALE, step: 1, per: "side", handKg: true, rest: 75, start: 6 },
+  // Recovery program (2026-11-25): gentle rest-day work
+  band_ext_rotation:    { name: "Band External Rotation", type: "bodyweight", step: 2.5, per: "side", rest: 40 },
+  dead_hang:            { name: "Dead Hang", type: "timed", fixed: true, noKg: true, step: 5, rest: 50 },
+  hip_flexor_stretch:   { name: "Hip Flexor Stretch (Half-Kneeling)", type: "timed", fixed: true, noKg: true, step: 5, per: "side", rest: 10 },
+  thoracic_rotation:    { name: "Thoracic Rotation (Side-Lying)", type: "bodyweight", step: 2.5, per: "side", rest: 10 },
+  ankle_mobility:       { name: "Ankle Mobility (Knee to Wall)", type: "bodyweight", step: 2.5, per: "side", rest: 10 },
+  neck_iso:             { name: "Neck Isometric Hold", type: "timed", fixed: true, noKg: true, step: 5, per: "direction", rest: 10 },
+  wrist_curl:           { name: "DB Wrist Curl", type: "weight", scale: DB_SCALE, step: 1, per: "hand", rest: 40, start: 2 },
+  reverse_wrist_curl:   { name: "DB Reverse Wrist Curl", type: "weight", scale: DB_SCALE, step: 1, per: "hand", rest: 40, start: 1 },
+  forearm_rotation:     { name: "DB Forearm Rotation", type: "weight", scale: DB_SCALE, step: 1, per: "side", rest: 40, start: 2 },
+  finger_extension:     { name: "Band Finger Extension", type: "bodyweight", step: 2.5, rest: 30 },
   ball_leg_curl:        { name: "Stability Ball Leg Curl", type: "bodyweight", step: 2.5, rest: 75 },
   seated_leg_curl:      { name: "Mx Seated Leg Curl", type: "weight", step: 2.5, rest: 75 },
   straight_arm_pulldown: { name: "Cable Straight-Arm Pulldown", type: "weight", step: 2.5, rest: 75, start: 10 },
@@ -109,6 +120,16 @@ export const skatingWorkouts = {
   B: { name: "S2 Up A - Intervals + Push", items: [it("cardio_4x4", 6, 60, 60), it("pallof_press", 2, 10, 10), it("db_bench", 3, 8, 10), it("pull_up", 4, 3, 3), it("one_arm_row", 3, 10, 12), it("db_shoulder_press", 2, 8, 10, { ss: true }), it("face_pull", 2, 12, 15, { ss: true })] },
   C: { name: "S3 Low B - Skate", items: [it("tibialis_raise", 2, 15, 20), it("single_leg_balance", 4, 30, 30), it("skater_bound", 2, 5, 5), it("goblet_squat", 3, 8, 12), it("db_sl_rdl", 2, 8, 8), it("slider_lateral_push", 2, 8, 8), it("low_walk", 2, 20, 20), it("side_plank", 4, 30, 30), it("cardio_z2", 1, 900, 900, { opt: true })] },
   D: { name: "S4 Up B - Pull + Base", items: [it("back_extension", 2, 10, 12), it("seated_row", 3, 10, 12), it("incline_db_press", 3, 10, 12), it("reverse_fly", 2, 12, 15), it("straight_arm_pulldown", 2, 12, 15), it("hanging_knee_raise", 2, 8, 12), it("cardio_z2", 1, 1200, 1200)] },
+};
+
+// Recovery program (RC4, rest days, R1-R4 as A-D). light: shared exercises use the item's kg and don't change
+// the exercise's progress; recovery-only exercises progress as usual. Forearm block at the end of every workout.
+const forearms = () => [it("wrist_curl", 2, 15, 15), it("reverse_wrist_curl", 2, 15, 15), it("forearm_rotation", 2, 10, 10), it("finger_extension", 2, 20, 20)];
+export const recoveryWorkouts = {
+  A: { name: "R1 Bike - Shoulders", items: [it("cardio_z2", 1, 1200, 1200), it("band_ext_rotation", 2, 15, 15), it("lateral_raise", 2, 15, 15, { kg: 3 }), it("face_pull", 2, 15, 15, { kg: 5 }), ...forearms()] },
+  B: { name: "R2 Rower - Grip + Core", items: [it("cardio_z2", 1, 1200, 1200), it("dead_hang", 2, 20, 20), it("pallof_press", 2, 10, 10, { kg: 5 }), it("side_plank", 4, 20, 20), ...forearms()] },
+  C: { name: "R3 SkiErg - Mobility", items: [it("cardio_z2", 1, 1200, 1200), it("hip_flexor_stretch", 4, 30, 30), it("thoracic_rotation", 2, 8, 8), it("ankle_mobility", 2, 10, 10), ...forearms()] },
+  D: { name: "R4 Walk - Arms + Neck", items: [it("backpack_walk", 1, 1800, 1800), it("hammer_curl", 2, 12, 15, { kg: 6 }), it("triceps_pushdown", 2, 12, 15, { kg: 25 }), it("neck_iso", 8, 15, 15), ...forearms()] },
 };
 
 export const seedSettings = {

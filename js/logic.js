@@ -19,7 +19,7 @@ export function stepWeight(ex, cur, dir) {
 export const restFor = (db, ex) => ex.rest || db.settings.restSec;
 export const repStepOf = (ex) => (ex.type === "timed" ? ex.step : ex.repStep || 1);
 export const repCap = (ex) => (ex.type === "timed" ? "SECONDS" : ex.repUnit === "m" ? "METRES" : ex.repUnit ? ex.repUnit.toUpperCase() : "REPS");
-const PER = { hand: "per hand", side: "per side", leg: "per leg" };
+const PER = { hand: "per hand", side: "per side", leg: "per leg", direction: "per direction" };
 // Weight per hand: dumbbell in each hand (per "hand", or handKg on per-leg exercises like split squats)
 export const perHand = (ex) => ex.per === "hand" || !!ex.handKg;
 export const perText = (ex) => (ex.handKg && ex.per && ex.per !== "hand" ? `weight per hand, reps ${PER[ex.per]}` : PER[ex.per] || "");
@@ -66,6 +66,8 @@ export function target(db, item) {
   const ex = db.exercises[item.ex];
   const last = ex.last;
   const t = { kg: null, reps: item.max, sets: item.sets, up: false, first: !last };
+  // Light program (recovery): a shared exercise uses the item's light weight at the top of the range
+  if (item.kg != null && db.programs && db.programs[db.activeProgram] && db.programs[db.activeProgram].light) return { ...t, kg: item.kg, reps: item.max, first: false };
   // Timed (plank): no fixed range. First time start at item.min, afterwards beat your best by one step.
   if (ex.type === "timed" && ex.fixed) { t.reps = item.min; t.kg = (last && last.kg) || 0; t.first = false; return t; }
   if (ex.type === "timed") { t.reps = last ? last.top + ex.step : item.min; t.dyn = true; return t; }
@@ -159,6 +161,7 @@ export function finishSession(db, session) {
   for (const item of sessionItems(w, session)) {
     const e = session.entries[item.ex];
     if (!e || !e.sets.length) continue;
+    if (p && p.light && item.kg != null) continue; // light sets of a shared exercise don't change its progress
     const ex = db.exercises[item.ex];
     const kg = e.sets[e.sets.length - 1].kg;
     ex.last = { date: session.finishedAt, kg, sets: e.sets.map((s) => ({ kg: s.kg, reps: s.reps })), top: Math.max(...e.sets.map((s) => s.reps)) };

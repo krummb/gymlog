@@ -296,7 +296,7 @@ function detail() {
     ? (ex.fixed ? `Today: ${item.sets} × ${dur(t.reps)}${ex.per && ex.per !== "hand" ? " (" + ex.per + "s alternate)" : ""}${t.kg ? " +" + L.fmtKg(t.kg) + " " + L.unitOf(ex) : ""}`
       : t.first ? `First time: start at ${t.reps} s` : `Today: ${item.sets} × ${t.reps} s ↑`)
     : t.first
-      ? (ex.type === "bodyweight" ? `First time: ${item.min === item.max ? item.min : item.min + "–" + item.max} ${ex.repUnit || "reps"} per set, stop about 1 rep before failure` : `First time: pick a weight that leaves 3–4 reps in reserve`)
+      ? (ex.type === "bodyweight" ? `First time: ${item.min === item.max ? item.min : item.min + "–" + item.max} ${ex.repUnit || "reps"} per set, ${prog().light ? "easy, 3–4 reps in reserve" : "stop about 1 rep before failure"}` : `First time: pick a weight that leaves 3–4 reps in reserve`)
       : `Today: ${t.kg ? L.fmtKg(t.kg) + " " + L.unitOf(ex) + hand : "BW"} · ${item.sets} × ${L.rangeText(ex, item)}${t.up ? " ↑" : ""}`;
 
   const logged = st.sets.map((x, i) => `<div class="logged">[x] Set ${i + 1} · ${timed ? dur(x.reps) + (x.kg ? " +" + L.fmtKg(x.kg) + " " + L.unitOf(ex) : "") : (x.kg ? L.fmtKg(x.kg) + " " + L.unitOf(ex) : "BW") + " × " + x.reps + (ex.repUnit ? " " + ex.repUnit : "")}</div>`).join("");
@@ -416,6 +416,7 @@ function ptSame(tx, item, t) {
   return sets === item.sets && lo === item.min && hi === item.max && ptKg === appKg;
 }
 function ptLine(item, t) {
+  if (prog().light) return ""; // PT targets are for the training programs
   const n = ptTarget(item.ex); if (!n) return "";
   const adv = ptAdvice(n.note), same = ptSame(n.target || "", item, t);
   if (same && !adv) return "";
@@ -430,7 +431,8 @@ function progCode(name) {
 }
 // Seconds as "45 s", or "4:00" from 2 minutes up
 const dur = (s) => (s >= 120 ? fmtClock(s) : `${s} s`);
-const sideOf = (ex, n) => (ex && ex.type === "timed" && (ex.per === "leg" || ex.per === "side") ? `${n % 2 ? "Left" : "Right"} ${ex.per}` : "");
+const sideOf = (ex, n) => (!ex || ex.type !== "timed" ? "" : ex.per === "direction" ? ["Front", "Back", "Left side", "Right side"][(n - 1) % 4]
+  : ex.per === "leg" || ex.per === "side" ? `${n % 2 ? "Left" : "Right"} ${ex.per}` : "");
 const catOf = (id) => { const c = (db.exercises[id] && db.exercises[id].cat) || CATS[id]; return CAT_ORDER.includes(c) ? c : "Other"; };
 function progTags(id) {
   const ls = L.LETTERS.filter((l) => db.workouts[l].items.some((i) => i.ex === id));

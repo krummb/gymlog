@@ -18,7 +18,7 @@ export const ALTS = {
 };
 
 // Groups for the Exercises screen (ids not listed fall under "Other")
-export const CAT_ORDER = ["Chest & push", "Back & pull", "Shoulders", "Arms", "Legs: squat & lunge", "Legs: hinge & glutes", "Balance & skating", "Core & carry", "Cardio", "Other"];
+export const CAT_ORDER = ["Chest & push", "Back & pull", "Shoulders", "Arms", "Legs: squat & lunge", "Legs: hinge & glutes", "Balance & skating", "Core & carry", "Cardio", "Mobility & recovery", "Forearms & grip", "Other"];
 const C = (cat, ids) => Object.fromEntries(ids.map((i) => [i, cat]));
 export const CATS = {
   ...C("Chest & push", ["db_bench", "incline_db_press", "bench_press", "push_up", "cable_fly", "dips", "weighted_dips", "chest_press"]),
@@ -28,6 +28,8 @@ export const CATS = {
   ...C("Legs: squat & lunge", ["goblet_squat", "back_squat", "db_split_squat", "db_bulgarian", "db_reverse_lunge", "db_step_up", "leg_press", "leg_extension", "calf_raise"]),
   ...C("Legs: hinge & glutes", ["deadlift", "trap_bar_deadlift", "db_rdl", "barbell_rdl", "prone_leg_curl", "ham_curl", "back_extension", "cable_pull_through", "hip_thrust", "db_hip_thrust", "glute_bridge"]),
   ...C("Balance & skating", ["single_leg_balance", "copenhagen_short", "copenhagen_long", "cable_hip_abduction", "tibialis_raise", "skater_bound", "slider_lateral_push", "db_lateral_lunge", "low_walk"]),
+  ...C("Mobility & recovery", ["band_ext_rotation", "hip_flexor_stretch", "thoracic_rotation", "ankle_mobility", "neck_iso"]),
+  ...C("Forearms & grip", ["dead_hang", "wrist_curl", "reverse_wrist_curl", "forearm_rotation", "finger_extension"]),
   ...C("Cardio", ["cardio_4x4", "cardio_z2", "backpack_walk"]),
   db_sl_rdl: "Legs: hinge & glutes", straight_arm_pulldown: "Back & pull", ball_leg_curl: "Legs: hinge & glutes", seated_leg_curl: "Legs: hinge & glutes", bfr_leg_extension: "Legs: squat & lunge", side_plank: "Core & carry",
   ...C("Core & carry", ["plank", "hanging_knee_raise", "ab_wheel", "cable_crunch", "pallof_press", "farmers_carry"]),
@@ -44,5 +46,5 @@ export const REST_TEXT = {
   db_split_squat: "about 90 s, after both legs", db_bulgarian: "90–120 s, after both legs", prone_leg_curl: "60–90 s, after both legs",
   farmers_carry: "about 90 s", single_leg_balance: "30 s between legs", copenhagen_short: "45–60 s per side", copenhagen_long: "60 s per side",
   cable_hip_abduction: "45–60 s per side", side_plank: "30–45 s per side", tibialis_raise: "45–60 s", skater_bound: "2 min", slider_lateral_push: "60 s per side",
-  low_walk: "60–90 s", straight_arm_pulldown: "60–90 s", db_lateral_lunge: "60–90 s per side", ball_leg_curl: "60–90 s", seated_leg_curl: "60–90 s", db_sl_rdl: "60–90 s per leg", cardio_4x4: "the easy part of your ladder level (2–3 min)", cardio_z2: "continuous", backpack_walk: "continuous", bfr_leg_extension: "30 s between sets, cuffs stay on", plank: "about 60 s", pallof_press: "45–60 s per side",
+  low_walk: "60–90 s", straight_arm_pulldown: "60–90 s", db_lateral_lunge: "60–90 s per side", ball_leg_curl: "60–90 s", band_ext_rotation: "30–45 s per side", dead_hang: "45–60 s", hip_flexor_stretch: "none between sides", thoracic_rotation: "none between sides", ankle_mobility: "none between sides", neck_iso: "a few seconds between directions", wrist_curl: "30–45 s", reverse_wrist_curl: "30–45 s", forearm_rotation: "30–45 s per side", finger_extension: "30 s", seated_leg_curl: "60–90 s", db_sl_rdl: "60–90 s per leg", cardio_4x4: "the easy part of your ladder level (2–3 min)", cardio_z2: "continuous", backpack_walk: "continuous", bfr_leg_extension: "30 s between sets, cuffs stay on", plank: "about 60 s", pallof_press: "45–60 s per side",
 };

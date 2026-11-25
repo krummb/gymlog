@@ -643,5 +643,105 @@ export const GUIDES = {
    "Let the pad return slowly until your legs are almost straight."
   ],
   "mistakes": "lifting the hips off the seat; letting the weight drop back; going so heavy that the lower back takes over"
+ },
+ "band_ext_rotation": {
+  "cue": "Elbow pinned to your side, bent 90 degrees. Rotate your forearm out against the band, return slowly. (Per side.)",
+  "steps": [
+   "Anchor a light band at elbow height. Stand side-on so the band crosses in front of your body to the hand furthest from the anchor.",
+   "Hold the band with your elbow bent 90 degrees and pinned to your side. A rolled towel between elbow and ribs helps.",
+   "Rotate your forearm outwards, away from your body, as far as is comfortable without the elbow leaving your side.",
+   "Return slowly over 2-3 s. Finish all reps, then switch sides."
+  ],
+  "mistakes": "elbow drifting away from the body; leaning the torso to fake the range; using a band so strong that the shoulder shrugs"
+ },
+ "dead_hang": {
+  "cue": "Hang from the bar with straight arms, shoulders gently active, feet off the floor. Breathe and relax.",
+  "steps": [
+   "Grip the bar shoulder-width, overhand.",
+   "Lift your feet so you hang with straight arms. Keep your shoulders slightly pulled down, not up by your ears.",
+   "Hold for 20-30 s, breathing calmly.",
+   "Step down before your grip fails. A box under your feet lets you take some weight if needed."
+  ],
+  "mistakes": "shoulders shrugged into the ears; swinging; dropping off when the grip suddenly fails"
+ },
+ "hip_flexor_stretch": {
+  "cue": "Kneel on one knee, squeeze that side's glute and tuck your pelvis. Shift forward gently until the front of the hip stretches. (Per side.)",
+  "steps": [
+   "Kneel on a mat with one knee down and the other foot flat in front, both knees bent about 90 degrees.",
+   "Squeeze the glute of the kneeling leg and tilt your pelvis under, as if tucking your tailbone.",
+   "Shift your hips forward slightly until you feel a stretch at the front of the kneeling hip. Keep your torso tall.",
+   "Hold for 30 s, breathing slowly, then switch sides."
+  ],
+  "mistakes": "arching the lower back instead of tucking; leaning forward; pushing into a sharp pull instead of a mild stretch"
+ },
+ "thoracic_rotation": {
+  "cue": "Lie on your side, knees bent and stacked. Open the top arm across to the other side, following it with your eyes. Knees stay together. (Per side.)",
+  "steps": [
+   "Lie on your side with hips and knees bent 90 degrees, a pillow or foam roller under the top knee.",
+   "Stretch both arms out in front of you, palms together.",
+   "Lift the top arm and rotate it up and over to the other side, letting your upper back turn. Keep the knees together on the floor.",
+   "Pause for a breath at the end, then return. Finish all reps, then switch sides."
+  ],
+  "mistakes": "knees lifting or sliding apart; forcing the arm to the floor; holding your breath"
+ },
+ "ankle_mobility": {
+  "cue": "Foot a little way from the wall, heel down. Push the knee forward to touch the wall, straight over the toes. (Per side.)",
+  "steps": [
+   "Face a wall with one foot about a hand's width from it, the other foot behind for balance.",
+   "Keeping the front heel on the floor, bend the knee forward until it touches the wall.",
+   "Return and repeat. If it's easy, move the foot a little further back.",
+   "Finish all reps, then switch sides."
+  ],
+  "mistakes": "heel lifting; knee caving inwards; bouncing into the end range"
+ },
+ "neck_iso": {
+  "cue": "Hand against your head, press gently into it without moving. Front, back and both sides.",
+  "steps": [
+   "Sit or stand tall, chin level.",
+   "Place your palm on your forehead and press your head gently into the hand, matching the force so nothing moves. Hold 15 s.",
+   "Repeat with your hands behind your head, then a hand on each side.",
+   "Use about a third of your strength at most."
+  ],
+  "mistakes": "pressing hard; holding your breath; letting the head tip or the chin poke forward. Stop at any pain, dizziness or tingling"
+ },
+ "wrist_curl": {
+  "cue": "Forearm on your thigh or a bench, palm up, wrist just past the edge. Curl the dumbbell up with the wrist only, lower slowly.",
+  "steps": [
+   "Sit with your forearm resting on your thigh or a bench, palm up, hand hanging just past the edge. Use 2-3 kg.",
+   "Let the dumbbell roll down towards your fingertips a little.",
+   "Curl it back into your palm and lift the wrist as high as is comfortable. The forearm stays down.",
+   "Lower over 2-3 s. Do both hands, one at a time or together."
+  ],
+  "mistakes": "lifting the forearm off the support; going heavy; jerking the weight up"
+ },
+ "reverse_wrist_curl": {
+  "cue": "Same setup as the wrist curl, palm down. Lift the back of the hand up, lower slowly. Lighter weight.",
+  "steps": [
+   "Sit with your forearm on your thigh or a bench, palm down, hand past the edge. Use 1-2 kg.",
+   "Let the hand drop gently.",
+   "Lift the back of the hand up as far as is comfortable, forearm still down.",
+   "Lower over 2-3 s."
+  ],
+  "mistakes": "using the same weight as the wrist curl; rotating the forearm; bending the elbow to help"
+ },
+ "forearm_rotation": {
+  "cue": "Hold one end of a light dumbbell like a hammer, elbow bent 90 degrees at your side. Turn the palm slowly up, then down. (Per side.)",
+  "steps": [
+   "Hold a 2-3 kg dumbbell by one end, the weight sticking up like a hammer. Elbow bent 90 degrees and pinned to your side.",
+   "Slowly turn your palm up, letting the weight tip out to the side.",
+   "Turn back through upright and on to palm down.",
+   "Finish all reps, then switch hands. Choke up on the handle to make it lighter."
+  ],
+  "mistakes": "elbow drifting away from the body; letting the weight drop fast; turning further than is comfortable"
+ },
+ "finger_extension": {
+  "cue": "Rubber band around your fingers and thumb. Open the hand wide against the band, close slowly. Balances all the gripping.",
+  "steps": [
+   "Loop a rubber band (or a light finger-extension band) around all five fingertips.",
+   "Spread your fingers and thumb as wide as you can against the band.",
+   "Hold for a moment, then close slowly.",
+   "Do both hands."
+  ],
+  "mistakes": "using a band so strong that the fingers cramp; rushing; bending the wrist"
  }
 };
