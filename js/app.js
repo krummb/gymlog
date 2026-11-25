@@ -166,7 +166,7 @@ function today() {
     } else if (st.status === "skipped") { cls = "skipped"; ic = I.skip; info = "skipped"; }
     if (isActive) { cls += " active"; if (st.status === "todo") ic = I.cur; }
     rows.push(`<button class="row ${cls} ${i % 2 ? "" : "alt"}" data-act="pick" data-v="${it.ex}">
-      <span class="ic">${ic}</span><span class="nm"><span class="nt">${esc(ex.name)}</span>${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}${it.today ? '<i class="tag">today</i>' : ""}</span><span>${esc(info)}</span><span>${st.sets.length}/${it.sets}</span></button>`);
+      <span class="ic">${ic}</span><span class="nm"><span class="nt">${esc(ex.name)}</span>${it.ss ? '<i class="tag">SS</i>' : ""}${it.opt ? '<i class="tag">opt</i>' : ""}${it.today ? '<i class="tag">today</i>' : ""}</span><span>${esc(info)}</span><span>${Math.floor(st.sets.length / L.grp(ex))}/${L.setsOf(ex, it)}</span></button>`);
   });
 
   const allClosed = doneCount === its.length;

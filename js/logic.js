@@ -98,7 +98,7 @@ export function target(db, item) {
 export function targetText(db, item) {
   const ex = db.exercises[item.ex];
   const t = target(db, item);
-  if (ex.type === "timed") return `${item.sets} × ${t.reps >= 120 ? Math.floor(t.reps / 60) + ":" + String(t.reps % 60).padStart(2, "0") : t.reps + " s"}${ex.fixed && t.kg ? " +" + fmtKg(t.kg) + "kg" : ""}`;
+  if (ex.type === "timed") return `${setsOf(ex, item)} × ${t.reps >= 120 ? Math.floor(t.reps / 60) + ":" + String(t.reps % 60).padStart(2, "0") : t.reps + " s"}${ex.fixed && t.kg ? " +" + fmtKg(t.kg) + "kg" : ""}`;
   const range = `${item.sets} × ${rangeText(ex, item, true)}`;
   if (t.first) return ex.type === "weight" ? `new · ${range}` : `BW · ${range}`;
   if (t.kg == null || t.kg === 0) return `BW · ${range}`;
@@ -109,7 +109,9 @@ export function targetText(db, item) {
 export function setsSummary(ex, sets, withUnit = true) {
   const u = withUnit ? " " + unitOf(ex) : "";
   if (ex.type === "timed") {
-    const t = sets.map((x) => x.reps).join(", ") + " s";
+    const g = grp(ex), ch = [];
+    for (let i = 0; i < sets.length; i += g) ch.push(sets.slice(i, i + g).map((x) => x.reps).join("/"));
+    const t = ch.join(", ") + " s";
     const w = Math.max(...sets.map((x) => x.kg || 0));
     return w ? `${t} +${fmtKg(w)}${u}` : t;
   }
