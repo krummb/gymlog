@@ -250,7 +250,9 @@ function fkeys() {
 
 const WARM = "__warm";
 const MACHINES = ["Bike", "Row", "SkiErg", "Assault"];
-const isMachine = (id) => id === "cardio_z2" || id === "cardio_4x4";
+const baseId = (id) => String(id).split("#")[0]; // "cardio_z2#2" = a second round of Z2 today (own entry, own machine data)
+const CARDIO = ["cardio_z2", "cardio_4x4", "backpack_walk"];
+const isMachine = (id) => baseId(id) === "cardio_z2" || baseId(id) === "cardio_4x4";
 const MFIELDS = [["dist", "Distance", "km"], ["kcal", "Calories", "kcal"], ["hr", "Avg heart rate", "bpm"], ["watts", "Avg watts", "W"], ["pace", "Avg pace", "/500 m"], ["rate", "Avg rate", "spm/rpm"], ["level", "Level / damper", ""]];
 const machChips = (cur, act) => `<div class="seg mchips">${MACHINES.map((m) => `<button class="btn ${cur === m ? "primary" : ""}" data-act="${act}" data-v="${m}">${m}</button>`).join("")}</div>`;
 const fmtClock = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
@@ -329,7 +331,7 @@ function detail() {
   // Hint line: manual-progression cases keep their advice; superset items name their partner; the rest list alternatives.
   const its = items();
   const partner = partnerOf(item);
-  const alts = (ALTS[item.ex] || []).filter((id) => db.exercises[id] && !its.some((i) => i.ex === id)).slice(0, 2).map((id) => db.exercises[id].name);
+  const alts = (ALTS[baseId(item.ex)] || []).filter((id) => db.exercises[id] && !its.some((i) => i.ex === id)).slice(0, 2).map((id) => db.exercises[id].name);
   // PT target from next.json, shown until the exercise has been logged after the PT's review
   const ptx = ptLine(item, t);
   const hint = ptx ? ptx : timed
@@ -356,7 +358,7 @@ function detail() {
     <div class="panel">
       <div class="detail">
         <div class="dhead">
-          <button class="img gwrap" data-act="guide" aria-label="Open position guide"><span class="ph">IMG<br>guide</span><img class="gimg" src="img/${item.ex}-1.webp" alt="" hidden></button>
+          <button class="img gwrap" data-act="guide" aria-label="Open position guide"><span class="ph">IMG<br>guide</span><img class="gimg" src="img/${baseId(item.ex)}-1.webp" alt="" hidden></button>
           <div class="dinfo"><div class="tgt">${esc(tgt)}</div><div class="last">${esc(L.lastText(ex))}</div><div class="cue">${esc(ex.cue)}</div></div>
         </div>
         ${logged}
@@ -447,14 +449,14 @@ function progCode(name) {
 const dur = (s) => (s >= 120 ? fmtClock(s) : `${s} s`);
 const sideOf = (ex, n) => (!ex || ex.type !== "timed" ? "" : ex.per === "direction" ? ["Front", "Back", "Left side", "Right side"][(n - 1) % 4]
   : ex.per === "leg" || ex.per === "side" ? `${n % 2 ? "Left" : "Right"} ${ex.per}` : "");
-const catOf = (id) => { const c = (db.exercises[id] && db.exercises[id].cat) || CATS[id]; return CAT_ORDER.includes(c) ? c : "Other"; };
+const catOf = (id) => { const c = (db.exercises[id] && db.exercises[id].cat) || CATS[baseId(id)]; return CAT_ORDER.includes(c) ? c : "Other"; };
 function progTags(id) {
   const ls = L.LETTERS.filter((l) => db.workouts[l].items.some((i) => i.ex === id));
   return ls.map((l) => `<i class="ptag">${l}</i>`).join("");
 }
 // How-to text (cue, steps, mistakes) and pictures of an exercise
 function howHtml(id) {
-  const ex = db.exercises[id], g = GUIDES[id];
+  const ex = db.exercises[id], g = GUIDES[baseId(id)];
   return g ? `
       <p class="gcue">${esc(g.cue)}</p>
       <div class="glbl">How</div>
@@ -463,13 +465,14 @@ function howHtml(id) {
       <p class="gbad">${esc(g.mistakes)}</p>
       ${(g.extra || []).map(([l, t]) => `<div class="glbl">${esc(l)}</div><p class="gbad ex">${esc(t)}</p>`).join("")}` : `<p class="gcue">${esc(ex.cue)}</p>`;
 }
-const imgsHtml = (id) => `<div class="gimgs gwrap"><div class="guideimg ph">Image coming</div>${[1, 2].map((n) => `<img class="gimg" src="img/${id}-${n}.webp" alt="${esc(db.exercises[id].name)}, picture ${n}" hidden>`).join("")}</div>`;
+const imgsHtml = (id) => `<div class="gimgs gwrap"><div class="guideimg ph">Image coming</div>${[1, 2].map((n) => `<img class="gimg" src="img/${baseId(id)}-${n}.webp" alt="${esc(db.exercises[id].name)}, picture ${n}" hidden>`).join("")}</div>`;
 
 function exercisesScreen() {
   const inProg = {};
   for (const l of L.LETTERS) for (const it of db.workouts[l].items) (inProg[it.ex] = inProg[it.ex] || []).push(l);
   const groups = new Map(CAT_ORDER.map((c) => [c, []]));
   for (const [id, e] of Object.entries(db.exercises)) {
+    if (e.alias) continue;
     const c = catOf(id);
     groups.get(c).push([id, e]);
   }
@@ -735,20 +738,27 @@ const act = {
   addtoday: () => {
     const taken = items().map((i) => i.ex);
     const groups = new Map(CAT_ORDER.map((c) => [c, []]));
-    for (const [id, e] of Object.entries(db.exercises)) groups.get(catOf(id)).push([id, e]);
+    for (const [id, e] of Object.entries(db.exercises)) if (!e.alias) groups.get(catOf(id)).push([id, e]);
     const out = [];
     for (const [c, list] of groups) {
       if (!list.length) continue;
       list.sort((a, b) => a[1].name.localeCompare(b[1].name));
       const n = list.filter(([id]) => taken.includes(id)).length;
-      out.push(`<details class="addcat" ${n ? "open" : ""}><summary>${esc(c)} <span class="rt">${list.length}${n ? ` · <b class="inprog">${n} in workout</b>` : ""}</span></summary>${list.map(([id, e]) => `<button class="btn wide addrow" data-act="addtodaynow" data-v="${id}">${esc(e.name)}${taken.includes(id) ? ' <i class="ptag">in workout · +1 round</i>' : ""}</button>`).join("")}</details>`);
+      out.push(`<details class="addcat" ${n ? "open" : ""}><summary>${esc(c)} <span class="rt">${list.length}${n ? ` · <b class="inprog">${n} in workout</b>` : ""}</span></summary>${list.map(([id, e]) => { const inw = taken.includes(id), two = inw && CARDIO.includes(id); return `<button class="btn wide addrow" ${inw && !two ? "disabled" : `data-act="addtodaynow" data-v="${id}"`}>${esc(e.name)}${two ? ' <i class="ptag">in workout · add another round</i>' : inw ? ' <i class="ptag">in workout</i>' : ""}</button>`; }).join("")}</details>`);
     }
-    ui.dialog = { title: "Add for today", ok: false, body: `<p class="small">Added to today's workout only; the program stays as it is. An exercise already in the workout gets one more round.</p>${out.join("")}<button class="btn wide" data-act="close">Cancel</button>` };
+    ui.dialog = { title: "Add for today", ok: false, body: `<p class="small">Added to today's workout only; the program stays as it is. Cardio already in the workout can be added again as a separate round, with its own machine data.</p>${out.join("")}<button class="btn wide" data-act="close">Cancel</button>` };
   },
   addtodaynow: (id) => {
     const s = ensureSession(); if (!s) { ui.dialog = null; return; }
     const e = db.exercises[id];
-    if (items().some((i) => i.ex === id)) { s.more = s.more || {}; s.more[id] = (s.more[id] || 0) + L.grp(e); persist(); setActive(id); ui.dialog = null; return; }
+    if (items().some((i) => i.ex === id)) {
+      if (!CARDIO.includes(id)) { ui.dialog = null; return; }
+      let n = 2; while (items().some((i) => i.ex === `${id}#${n}`)) n++;
+      const nid = `${id}#${n}`, base = items().find((i) => i.ex === id);
+      if (!db.exercises[nid]) db.exercises[nid] = { ...JSON.parse(JSON.stringify(e)), name: `${e.name} (${n})`, alias: id, last: null };
+      (s.extra = s.extra || []).push({ ex: nid, sets: 1, min: base.min, max: base.max, today: true });
+      persist(); setActive(nid); ui.dialog = null; return;
+    }
     let ref = null;
     for (const x of Object.values(db.workouts)) { const f = x.items.find((i) => i.ex === id); if (f) { ref = f; break; } }
     const min = ref ? ref.min : e.type === "timed" ? 20 : e.type === "bodyweight" ? 10 : 8;
@@ -758,14 +768,14 @@ const act = {
   },
   guide: () => {
     if (!ui.active || ui.active === WARM) return "norender";
-    const ex = db.exercises[ui.active], g = GUIDES[ui.active];
+    const ex = db.exercises[ui.active], g = GUIDES[baseId(ui.active)];
     const per = L.perText(ex);
     const how = howHtml(ui.active);
     // Full-height sheet: text first (readable in the top part of the screen), picture below, blank space last so the picture can be scrolled up into reach
     const id = ui.active, s = session();
     const logged = s && s.entries[id] ? s.entries[id].sets.length : 0;
     const its = items();
-    const alts = (ALTS[id] || []).filter((a) => db.exercises[a]);
+    const alts = (ALTS[baseId(id)] || []).filter((a) => db.exercises[a]);
     const altHtml = alts.length ? alts.map((a) => !its.some((i) => i.ex === a) && !logged
       ? `<button class="btn alt" data-act="doswap" data-v="${a}">${esc(db.exercises[a].name)} <span class="small">· swap today</span></button>`
       : `<span class="altname">${esc(db.exercises[a].name)}</span>`).join("") : `<span class="small">none listed</span>`;
@@ -775,7 +785,7 @@ const act = {
       ${how}
       <div class="glbl">Rest between sets</div>
       <div class="frow"><label for="sh_rest">Yours</label><input id="sh_rest" data-ex="${id}" type="text" inputmode="numeric" value="${fmtRest(L.restFor(db, ex))}"><span class="small">${ex.rest ? "" : "default"}</span></div>
-      ${REST_TEXT[id] ? `<p class="small">Recommended: ${esc(REST_TEXT[id])}</p>` : ""}
+      ${REST_TEXT[baseId(id)] ? `<p class="small">Recommended: ${esc(REST_TEXT[baseId(id)])}</p>` : ""}
       <div class="glbl">Weight</div>
       <div class="frow"><span class="wdesc">${esc(wdesc)}</span><button class="btn" data-act="exdlg" data-ex="${id}">Edit…</button></div>
       <div class="glbl">Alternatives</div>
@@ -812,7 +822,7 @@ const act = {
       <button class="btn primary wide" data-act="exsave" data-ex="${esc(id)}">Save</button>
       <button class="btn wide" data-act="close">Cancel</button>
       ${!isNew && e.custom ? `<button class="btn wide" data-act="exdel" data-ex="${esc(id)}">Delete this exercise</button>` : ""}
-      ${isNew ? "" : `<div class="howsep">How-to</div>${howHtml(id)}${REST_TEXT[id] ? `<p class="small">Recommended rest: ${esc(REST_TEXT[id])}</p>` : ""}${imgsHtml(id)}`}` };
+      ${isNew ? "" : `<div class="howsep">How-to</div>${howHtml(id)}${REST_TEXT[baseId(id)] ? `<p class="small">Recommended rest: ${esc(REST_TEXT[baseId(id)])}</p>` : ""}${imgsHtml(id)}`}` };
   },
   extype: () => "norender",
   exsave: (_, el) => {
@@ -872,7 +882,7 @@ const act = {
   },
   padd: (_, el) => {
     const l = el.dataset.l, w = db.workouts[l];
-    const opts = Object.entries(db.exercises).filter(([id]) => !w.items.some((i) => i.ex === id))
+    const opts = Object.entries(db.exercises).filter(([id, e]) => !e.alias && !w.items.some((i) => i.ex === id))
       .map(([id, e]) => `<button class="btn wide" data-act="paddnow" data-l="${l}" data-ex="${id}">${esc(e.name)}</button>`).join("");
     ui.dialog = { title: `Add to workout ${l}`, ok: false, body: `${opts || "<p>All exercises are already in this workout.</p>"}<button class="btn wide" data-act="close">Cancel</button><p class="small">New exercises are created in Settings → Exercises.</p>` };
   },

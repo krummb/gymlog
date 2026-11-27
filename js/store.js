@@ -168,7 +168,21 @@ function migrate(db) {
     for (const l of ["A", "B", "C", "D"]) { w[l] = o[MAP[l]]; if (/^S\d /.test(w[l].name)) w[l].name = skatingWorkouts[l].name; }
     for (const s of Object.values(db.sessions || {})) if (s.program === "sk4" && MAP[s.workout]) s.workout = MAP[s.workout];
   }
-  if (db.programs && db.programs.sk4) db.progRev = Math.max(db.progRev || 0, 7);
+  if ((db.progRev || 0) < 8 && db.programs && db.programs.sk4) {
+    // 8 (2026-11-27): the user's second Z2 round (rower) was logged under Cardio Intervals as 1 x 4:30 + five 1 s filler sets
+    // because Z2 couldn't be added twice. Move it to its own "Steady Cardio Z2 (2)" row and restore the intervals' "last".
+    const s = (db.sessions || {})["2026-11-27T09:13:18.989Z"], iv = s && s.entries && s.entries.cardio_4x4;
+    if (s && iv && iv.sets.length === 6 && iv.sets[0].reps === 270 && iv.sets.slice(1).every((x) => x.reps === 1) && db.exercises.cardio_z2 && db.exercises.cardio_4x4) {
+      const z = db.exercises.cardio_z2, id = "cardio_z2#2";
+      db.exercises[id] = { ...clone(z), name: z.name + " (2)", alias: "cardio_z2", last: null };
+      s.entries[id] = { ...iv, sets: [iv.sets[0]], machine: { ...(iv.machine || {}), pace: "2:25" } };
+      delete s.entries.cardio_4x4;
+      s.extra = (s.extra || []).filter((i) => i.ex !== "cardio_4x4"); s.extra.push({ ex: id, sets: 1, min: 1200, max: 1200, today: true });
+      const prev = Object.values(db.sessions).filter((x) => x !== s && x.entries && x.entries.cardio_4x4 && x.entries.cardio_4x4.sets.length).sort((a, b) => (a.startedAt < b.startedAt ? 1 : -1))[0];
+      if (prev) { const ps = prev.entries.cardio_4x4.sets; db.exercises.cardio_4x4.last = { date: prev.finishedAt || prev.startedAt, kg: null, sets: ps.map((x) => ({ kg: x.kg, reps: x.reps })), top: Math.max(...ps.map((x) => x.reps)) }; }
+    }
+  }
+  if (db.programs && db.programs.sk4) db.progRev = Math.max(db.progRev || 0, 8);
   linkActive(db);
   return db;
 }

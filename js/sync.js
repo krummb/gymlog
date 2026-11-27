@@ -36,7 +36,7 @@ export function buildLog(db) {
   const L = [`# GymLog results`, ``, `Generated ${new Date().toISOString()} · kg · weights for dumbbells are per hand · reps listed per set in order · timed per-leg/side holds listed L, R in order`, ``];
   L.push(`## Current exercise weights`, ``);
   for (const e of Object.values(db.exercises)) {
-    if (!e.last) continue;
+    if (!e.last || e.alias) continue;
     const w = e.last.kg != null ? (e.type === "timed" ? `${e.last.top} s` : `${e.last.kg} kg`) : "BW";
     L.push(`- ${e.name}: ${w}${e.last.baseline ? " (typed starting weight)" : ` (${e.last.date ? fmtDate(e.last.date) : "?"})`}`);
   }

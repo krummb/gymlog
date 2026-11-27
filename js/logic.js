@@ -152,11 +152,9 @@ export function itemState(session, item) {
 // Short version (w.short, from the PT): used when the session is marked short
 export const baseItems = (w, session) => (session && session.short && w.short && w.short.length ? w.short : w.items);
 export function sessionItems(w, session) {
-  if (!session || (!session.swaps && !session.extra && !session.short && !session.more)) return w.items;
+  if (!session || (!session.swaps && !session.extra && !session.short)) return w.items;
   const sw = session.swaps || {};
-  const mo = session.more || {};
-  const list0 = [...baseItems(w, session).map((it) => (sw[it.ex] ? { ...it, ex: sw[it.ex], today: true } : it)), ...(session.extra || [])];
-  const list = list0.map((it) => (mo[it.ex] ? { ...it, sets: it.sets + mo[it.ex] } : it));
+  const list = [...baseItems(w, session).map((it) => (sw[it.ex] ? { ...it, ex: sw[it.ex], today: true } : it)), ...(session.extra || [])];
   // exercises already logged that the short version leaves out stay in the list
   for (const it of w.items) { const ex = sw[it.ex] || it.ex; if (session.entries[ex] && !list.some((x) => x.ex === ex)) list.push({ ...it, ex }); }
   return list;
@@ -172,6 +170,7 @@ export function finishSession(db, session) {
     if (!e || !e.sets.length) continue;
     if (p && p.light && item.kg != null) continue; // light sets of a shared exercise don't change its progress
     const ex = db.exercises[item.ex];
+    if (ex.alias) continue; // an extra round of cardio doesn't change the exercise's last
     const kg = e.sets[e.sets.length - 1].kg;
     ex.last = { date: session.finishedAt, kg, sets: e.sets.map((s) => ({ kg: s.kg, reps: s.reps })), top: Math.max(...e.sets.map((s) => s.reps)) };
   }
