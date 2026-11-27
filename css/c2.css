@@ -301,3 +301,4 @@ footer .drives .drive { height:44px; position:relative; display:flex; align-item
 @font-face { font-family:"Plex Mono"; src:url("../fonts/plexmono-bold.woff") format("woff"); font-weight:700; font-style:normal; font-display:swap; }
 .lbig, .restclock, .warmclock { font-family:"Plex Mono", "Courier New", monospace; font-weight:700; }
 .gbad.ex { color:inherit; }
+.addcat summary{cursor:pointer;padding:6px 4px;font-weight:bold}.addcat .rt{float:right;font-weight:normal}.addrow{text-align:left}

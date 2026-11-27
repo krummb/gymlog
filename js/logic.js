@@ -152,9 +152,11 @@ export function itemState(session, item) {
 // Short version (w.short, from the PT): used when the session is marked short
 export const baseItems = (w, session) => (session && session.short && w.short && w.short.length ? w.short : w.items);
 export function sessionItems(w, session) {
-  if (!session || (!session.swaps && !session.extra && !session.short)) return w.items;
+  if (!session || (!session.swaps && !session.extra && !session.short && !session.more)) return w.items;
   const sw = session.swaps || {};
-  const list = [...baseItems(w, session).map((it) => (sw[it.ex] ? { ...it, ex: sw[it.ex], today: true } : it)), ...(session.extra || [])];
+  const mo = session.more || {};
+  const list0 = [...baseItems(w, session).map((it) => (sw[it.ex] ? { ...it, ex: sw[it.ex], today: true } : it)), ...(session.extra || [])];
+  const list = list0.map((it) => (mo[it.ex] ? { ...it, sets: it.sets + mo[it.ex] } : it));
   // exercises already logged that the short version leaves out stay in the list
   for (const it of w.items) { const ex = sw[it.ex] || it.ex; if (session.entries[ex] && !list.some((x) => x.ex === ex)) list.push({ ...it, ex }); }
   return list;

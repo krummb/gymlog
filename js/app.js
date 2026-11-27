@@ -649,7 +649,7 @@ function tick() {
   }
   if (!text && ui.overUntil > now) { text = "REST OVER"; over = true; }
   if (!text && warming) text = "Warm " + fmtClock(wsec);
-  el.innerHTML = esc(text).replace(/ 0:/, ' <span class="z">0</span>:').replace(/:0(\d)/, ':<span class="z">0</span>$1');
+  el.innerHTML = esc(text).replace(/ 0:0(\d)\b/, ' <span class="z">0</span>:<span class="z">0</span>$1').replace(/ 0:(?!<)/, ' <span class="z">0</span>:');
   el.classList.toggle("over", over);
   if (ui.restEnd || ui.overUntil > now || warming) timerId = setTimeout(tick, 250);
 }
@@ -734,13 +734,21 @@ const act = {
   },
   addtoday: () => {
     const taken = items().map((i) => i.ex);
-    const opts = Object.entries(db.exercises).filter(([id]) => !taken.includes(id))
-      .map(([id, e]) => `<button class="btn wide" data-act="addtodaynow" data-v="${id}">${esc(e.name)}</button>`).join("");
-    ui.dialog = { title: "Add for today", ok: false, body: `<p class="small">Added at the end of today's workout only. The program stays as it is.</p>${opts || "<p>All exercises are already in today's workout.</p>"}<button class="btn wide" data-act="close">Cancel</button>` };
+    const groups = new Map(CAT_ORDER.map((c) => [c, []]));
+    for (const [id, e] of Object.entries(db.exercises)) groups.get(catOf(id)).push([id, e]);
+    const out = [];
+    for (const [c, list] of groups) {
+      if (!list.length) continue;
+      list.sort((a, b) => a[1].name.localeCompare(b[1].name));
+      const n = list.filter(([id]) => taken.includes(id)).length;
+      out.push(`<details class="addcat" ${n ? "open" : ""}><summary>${esc(c)} <span class="rt">${list.length}${n ? ` · <b class="inprog">${n} in workout</b>` : ""}</span></summary>${list.map(([id, e]) => `<button class="btn wide addrow" data-act="addtodaynow" data-v="${id}">${esc(e.name)}${taken.includes(id) ? ' <i class="ptag">in workout · +1 round</i>' : ""}</button>`).join("")}</details>`);
+    }
+    ui.dialog = { title: "Add for today", ok: false, body: `<p class="small">Added to today's workout only; the program stays as it is. An exercise already in the workout gets one more round.</p>${out.join("")}<button class="btn wide" data-act="close">Cancel</button>` };
   },
   addtodaynow: (id) => {
     const s = ensureSession(); if (!s) { ui.dialog = null; return; }
     const e = db.exercises[id];
+    if (items().some((i) => i.ex === id)) { s.more = s.more || {}; s.more[id] = (s.more[id] || 0) + L.grp(e); persist(); setActive(id); ui.dialog = null; return; }
     let ref = null;
     for (const x of Object.values(db.workouts)) { const f = x.items.find((i) => i.ex === id); if (f) { ref = f; break; } }
     const min = ref ? ref.min : e.type === "timed" ? 20 : e.type === "bodyweight" ? 10 : 8;
